@@ -60,7 +60,16 @@ const ReminderDialog = ({ open, onOpenChange }: ReminderDialogProps) => {
   });
   
   const onSubmit = (values: z.infer<typeof reminderSchema>) => {
-    addReminder(values);
+    // Ensure all required fields are present before passing to addReminder
+    addReminder({
+      title: values.title,
+      description: values.description || '',
+      type: values.type,
+      date: values.date,
+      time: values.time,
+      recurrence: values.recurrence,
+    });
+    
     form.reset();
     onOpenChange(false);
   };
