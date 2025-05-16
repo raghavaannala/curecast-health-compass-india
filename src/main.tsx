@@ -1,8 +1,9 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { Toaster } from '@/components/ui/toaster';
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
@@ -22,6 +23,9 @@ if (!rootElement) throw new Error('Root element not found');
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+      <Toaster />
+    </LanguageProvider>
   </React.StrictMode>
 );

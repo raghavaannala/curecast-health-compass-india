@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,6 +14,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,50 +25,88 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useReminders } from '@/contexts/RemindersContext';
+import { useUser } from '@/contexts/UserContext';
+import { Separator } from '@/components/ui/separator';
+import { Bell, Clock, Pill } from 'lucide-react';
+import type { Reminder } from '@/types/health';
 
 interface ReminderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editReminder?: Reminder;
 }
 
 const reminderSchema = z.object({
   title: z.string().min(1, { message: 'Title is required' }),
   description: z.string().optional(),
-  type: z.enum(['medication', 'appointment', 'follow-up']),
+  type: z.enum(['medication', 'followup', 'vaccination']),
   date: z.string().min(1, { message: 'Date is required' }),
   time: z.string().min(1, { message: 'Time is required' }),
   recurrence: z.enum(['none', 'daily', 'weekly', 'monthly']),
+  medication: z.object({
+    name: z.string().optional(),
+    dosage: z.string().optional(),
+    instructions: z.string().optional(),
+  }).optional(),
+  notificationSettings: z.object({
+    enablePush: z.boolean(),
+    enableSMS: z.boolean(),
+    enableEmail: z.boolean(),
+    advanceNotice: z.number().min(0).max(180),
+  }),
 });
 
-const ReminderDialog = ({ open, onOpenChange }: ReminderDialogProps) => {
-  const { addReminder } = useReminders();
+type ReminderFormData = z.infer<typeof reminderSchema>;
+
+const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProps) => {
+  const { addReminder, updateReminder } = useReminders();
+  const { user } = useUser();
+  const [showMedicationFields, setShowMedicationFields] = useState(false);
   
-  const form = useForm<z.infer<typeof reminderSchema>>({
+  const form = useForm<ReminderFormData>({
     resolver: zodResolver(reminderSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      type: 'medication',
-      date: new Date().toISOString().split('T')[0],
-      time: '08:00',
-      recurrence: 'none',
+      title: editReminder?.title || '',
+      description: editReminder?.description || '',
+      type: editReminder?.type || 'medication',
+      date: editReminder?.date || new Date().toISOString().split('T')[0],
+      time: editReminder?.time || '08:00',
+      recurrence: editReminder?.recurrence || 'none',
+      medication: editReminder?.medication || undefined,
+      notificationSettings: editReminder?.notificationSettings || {
+        enablePush: true,
+        enableSMS: user?.notificationPreferences?.enableSMS || false,
+        enableEmail: user?.notificationPreferences?.enableEmail || false,
+        advanceNotice: user?.notificationPreferences?.reminderAdvanceNotice || 30,
+      },
     },
   });
   
-  const onSubmit = (values: z.infer<typeof reminderSchema>) => {
-    // Ensure all required fields are present before passing to addReminder
-    addReminder({
-      title: values.title,
-      description: values.description || '',
-      type: values.type,
-      date: values.date,
-      time: values.time,
-      recurrence: values.recurrence,
-    });
+  const watchType = form.watch('type');
+  
+  useEffect(() => {
+    setShowMedicationFields(watchType === 'medication');
+  }, [watchType]);
+  
+  const onSubmit = (values: ReminderFormData) => {
+    const reminderData = {
+      ...values,
+      medication: showMedicationFields ? values.medication : undefined,
+      adherenceLog: [],
+      completed: false,
+      userId: user?.id,
+    };
+    
+    if (editReminder) {
+      updateReminder(editReminder.id, reminderData);
+    } else {
+      addReminder(reminderData);
+    }
     
     form.reset();
     onOpenChange(false);
@@ -76,9 +114,11 @@ const ReminderDialog = ({ open, onOpenChange }: ReminderDialogProps) => {
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle>Create New Reminder</DialogTitle>
+          <DialogTitle>
+            {editReminder ? 'Edit Reminder' : 'Create New Reminder'}
+          </DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
@@ -128,9 +168,14 @@ const ReminderDialog = ({ open, onOpenChange }: ReminderDialogProps) => {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="medication">Medication</SelectItem>
-                      <SelectItem value="appointment">Appointment</SelectItem>
-                      <SelectItem value="follow-up">Follow-up</SelectItem>
+                      <SelectItem value="medication">
+                        <div className="flex items-center gap-2">
+                          <Pill className="h-4 w-4" />
+                          <span>Medication</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="followup">Follow-up</SelectItem>
+                      <SelectItem value="vaccination">Vaccination</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -192,6 +237,169 @@ const ReminderDialog = ({ open, onOpenChange }: ReminderDialogProps) => {
               )}
             />
             
+            {showMedicationFields && (
+              <>
+                <Separator className="my-4" />
+                <div className="space-y-4">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Pill className="h-4 w-4" />
+                    Medication Details
+                  </h4>
+                  
+                  <FormField
+                    control={form.control}
+                    name="medication.name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Medication Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter medication name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="medication.dosage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dosage</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., 1 tablet, 5ml" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="medication.instructions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Instructions</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="e.g., Take with food" 
+                            className="resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
+            
+            <Separator className="my-4" />
+            
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                Notification Settings
+              </h4>
+              
+              <FormField
+                control={form.control}
+                name="notificationSettings.enablePush"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between">
+                    <div>
+                      <FormLabel>Push Notifications</FormLabel>
+                      <FormDescription>
+                        Receive notifications on your device
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="notificationSettings.enableSMS"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between">
+                    <div>
+                      <FormLabel>SMS Notifications</FormLabel>
+                      <FormDescription>
+                        Receive text message reminders
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="notificationSettings.enableEmail"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between">
+                    <div>
+                      <FormLabel>Email Notifications</FormLabel>
+                      <FormDescription>
+                        Receive email reminders
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="notificationSettings.advanceNotice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Advance Notice
+                    </FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      defaultValue={field.value.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select advance notice" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="0">At time of reminder</SelectItem>
+                        <SelectItem value="5">5 minutes before</SelectItem>
+                        <SelectItem value="15">15 minutes before</SelectItem>
+                        <SelectItem value="30">30 minutes before</SelectItem>
+                        <SelectItem value="60">1 hour before</SelectItem>
+                        <SelectItem value="120">2 hours before</SelectItem>
+                        <SelectItem value="180">3 hours before</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <DialogFooter>
               <Button 
                 type="button" 
@@ -200,7 +408,9 @@ const ReminderDialog = ({ open, onOpenChange }: ReminderDialogProps) => {
               >
                 Cancel
               </Button>
-              <Button type="submit">Save Reminder</Button>
+              <Button type="submit">
+                {editReminder ? 'Update' : 'Create'} Reminder
+              </Button>
             </DialogFooter>
           </form>
         </Form>

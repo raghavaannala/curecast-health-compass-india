@@ -1,16 +1,16 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Reminder } from '../types';
 import { reminders } from '../services/mockData';
 import { useUser } from './UserContext';
 import { useToast } from '@/hooks/use-toast';
 
-type RemindersContextType = {
+export interface RemindersContextType {
   userReminders: Reminder[];
-  addReminder: (reminder: Omit<Reminder, 'id' | 'userId' | 'completed'>) => void;
-  toggleReminderComplete: (id: string) => void;
+  addReminder: (reminder: Omit<Reminder, 'id' | 'userId' | 'isCompleted'>) => void;
+  updateReminder: (id: string, reminder: Partial<Reminder>) => void;
   deleteReminder: (id: string) => void;
-};
+  markAsComplete: (id: string) => void;
+}
 
 const RemindersContext = createContext<RemindersContextType | undefined>(undefined);
 
@@ -45,13 +45,13 @@ export const RemindersProvider = ({ children }: { children: ReactNode }) => {
     
   }, [currentUser, toast]);
   
-  const addReminder = (reminderData: Omit<Reminder, 'id' | 'userId' | 'completed'>) => {
+  const addReminder = (reminderData: Omit<Reminder, 'id' | 'userId' | 'isCompleted'>) => {
     if (!currentUser) return;
     
     const newReminder: Reminder = {
-      id: `r${reminders.length + 1}`,
+      id: crypto.randomUUID(),
       userId: currentUser.id,
-      completed: false,
+      isCompleted: false,
       ...reminderData,
     };
     
@@ -65,25 +65,10 @@ export const RemindersProvider = ({ children }: { children: ReactNode }) => {
     });
   };
   
-  const toggleReminderComplete = (id: string) => {
-    const updatedReminders = userReminders.map(reminder => {
-      if (reminder.id === id) {
-        return { ...reminder, completed: !reminder.completed };
-      }
-      return reminder;
-    });
-    
-    // Update local state
-    setUserReminders(updatedReminders);
-    
-    // In a real app, this would be an API call to update the reminder
-    const reminderIndex = reminders.findIndex(r => r.id === id);
-    if (reminderIndex !== -1) {
-      reminders[reminderIndex] = {
-        ...reminders[reminderIndex],
-        completed: !reminders[reminderIndex].completed
-      };
-    }
+  const updateReminder = (id: string, reminder: Partial<Reminder>) => {
+    setUserReminders(prev => prev.map(r => 
+      r.id === id ? { ...r, ...reminder } : r
+    ));
   };
   
   const deleteReminder = (id: string) => {
@@ -102,13 +87,20 @@ export const RemindersProvider = ({ children }: { children: ReactNode }) => {
     });
   };
   
+  const markAsComplete = (id: string) => {
+    setUserReminders(prev => prev.map(r => 
+      r.id === id ? { ...r, completed: true } : r
+    ));
+  };
+  
   return (
     <RemindersContext.Provider 
       value={{ 
         userReminders, 
         addReminder, 
-        toggleReminderComplete,
-        deleteReminder
+        updateReminder,
+        deleteReminder,
+        markAsComplete,
       }}
     >
       {children}

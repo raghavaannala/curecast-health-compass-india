@@ -1,133 +1,148 @@
-
-import { useState } from 'react';
-import { Reminder } from '@/types';
-import { useReminders } from '@/contexts/RemindersContext';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MoreVertical, Repeat, Pill, CalendarClock, AlertCircle, Trash2 } from 'lucide-react';
+import React from 'react';
 import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { Bell, Check, Clock, Edit, MoreVertical, Pill, Trash } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import type { Reminder } from '@/types/health';
+import { useReminders } from '@/contexts/RemindersContext';
 
 interface ReminderItemProps {
   reminder: Reminder;
+  onEdit?: (reminder: Reminder) => void;
 }
 
-const ReminderItem = ({ reminder }: ReminderItemProps) => {
-  const { toggleReminderComplete, deleteReminder } = useReminders();
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  
-  const typeIcons = {
-    medication: <Pill className="h-4 w-4" />,
-    appointment: <CalendarClock className="h-4 w-4" />,
-    'follow-up': <AlertCircle className="h-4 w-4" />,
+const ReminderItem: React.FC<ReminderItemProps> = ({ reminder, onEdit }) => {
+  const { updateReminder, deleteReminder } = useReminders();
+
+  const handleMarkComplete = () => {
+    updateReminder(reminder.id, {
+      completed: true,
+      adherenceLog: [
+        ...(reminder.adherenceLog || []),
+        {
+          date: new Date().toISOString(),
+          taken: true,
+        },
+      ],
+    });
   };
-  
-  const dateTimeString = `${format(new Date(reminder.date), 'MMM d, yyyy')} at ${reminder.time}`;
-  
-  const recurrenceLabels = {
-    daily: 'Every day',
-    weekly: 'Every week',
-    monthly: 'Every month',
-    none: 'One time',
+
+  const handleDelete = () => {
+    deleteReminder(reminder.id);
   };
-  
+
+  const getRecurrenceText = (recurrence?: string) => {
+    switch (recurrence) {
+      case 'daily':
+        return 'Every day';
+      case 'weekly':
+        return 'Every week';
+      case 'monthly':
+        return 'Every month';
+      default:
+        return 'One time';
+    }
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'medication':
+        return <Pill className="h-4 w-4" />;
+      case 'followup':
+        return <Clock className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+
   return (
-    <div className={cn(
-      "glass-morphism rounded-lg p-4 transition-all",
-      reminder.completed && "opacity-70"
+    <Card className={cn(
+      'transition-colors',
+      reminder.completed ? 'bg-muted' : 'hover:bg-accent/5'
     )}>
-      <div className="flex items-start gap-3">
-        <Checkbox 
-          checked={reminder.completed} 
-          onCheckedChange={() => toggleReminderComplete(reminder.id)}
-          className="mt-1"
-        />
-        
-        <div className="flex-1">
-          <h4 className={cn(
-            "font-medium",
-            reminder.completed && "line-through"
-          )}>
-            {reminder.title}
-          </h4>
-          
-          {reminder.description && (
-            <p className="text-sm text-muted-foreground mt-1">{reminder.description}</p>
-          )}
-          
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-            <div className="flex items-center text-xs text-muted-foreground">
-              <Calendar className="h-3 w-3 mr-1" />
-              <span>{dateTimeString}</span>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center gap-2">
+              {getTypeIcon(reminder.type)}
+              <h4 className={cn(
+                'font-medium',
+                reminder.completed && 'text-muted-foreground line-through'
+              )}>
+                {reminder.title}
+              </h4>
+              {reminder.recurrence !== 'none' && (
+                <Badge variant="outline" className="ml-2">
+                  {getRecurrenceText(reminder.recurrence)}
+                </Badge>
+              )}
             </div>
             
-            {reminder.recurrence !== 'none' && (
-              <div className="flex items-center text-xs text-muted-foreground">
-                <Repeat className="h-3 w-3 mr-1" />
-                <span>{recurrenceLabels[reminder.recurrence || 'none']}</span>
-              </div>
+            {reminder.description && (
+              <p className="text-sm text-muted-foreground">
+                {reminder.description}
+              </p>
             )}
             
-            <div className="flex items-center text-xs text-muted-foreground">
-              {typeIcons[reminder.type]}
-              <span className="ml-1 capitalize">{reminder.type}</span>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {format(new Date(`${reminder.date}T${reminder.time}`), 'PPp')}
+              </span>
+              
+              {reminder.medication && (
+                <span className="flex items-center gap-1">
+                  <Pill className="h-3 w-3" />
+                  {reminder.medication.dosage}
+                </span>
+              )}
             </div>
           </div>
+          
+          <div className="flex items-center gap-2">
+            {!reminder.completed && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleMarkComplete}
+                title="Mark as complete"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            )}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onEdit?.(reminder)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="text-destructive"
+                >
+                  <Trash className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem 
-              onClick={() => toggleReminderComplete(reminder.id)}
-              className="cursor-pointer"
-            >
-              {reminder.completed ? 'Mark as incomplete' : 'Mark as complete'}
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="text-destructive cursor-pointer"
-              onClick={() => setConfirmDelete(true)}
-            >
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      
-      <Dialog open={confirmDelete} onOpenChange={setConfirmDelete}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Reminder</DialogTitle>
-          </DialogHeader>
-          <p>Are you sure you want to delete this reminder? This action cannot be undone.</p>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDelete(false)}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive"
-              onClick={() => {
-                deleteReminder(reminder.id);
-                setConfirmDelete(false);
-              }}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

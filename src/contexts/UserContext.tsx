@@ -1,128 +1,39 @@
+import React, { createContext, useContext, useState } from 'react';
+import type { UserProfile } from '@/types/health';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, MedicalRecord } from '../types';
-import { users, medicalRecords } from '../services/mockData';
-
-type UserContextType = {
-  currentUser: User | null;
-  login: (phoneNumber: string) => Promise<boolean>;
-  logout: () => void;
-  register: (userData: Partial<User>) => Promise<boolean>;
-  isAuthenticated: boolean;
-  userMedicalHistory: MedicalRecord[];
-  addMedicalRecord: (record: Omit<MedicalRecord, 'id' | 'userId' | 'date'>) => void;
-};
+export interface UserContextType {
+  user: UserProfile | null;
+  setUser: (user: UserProfile | null) => void;
+  updateProfile: (updates: Partial<UserProfile>) => void;
+  updateNotificationPreferences: (updates: Partial<UserProfile['notificationPreferences']>) => void;
+}
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userMedicalHistory, setUserMedicalHistory] = useState<MedicalRecord[]>([]);
-  
-  // Check if user is logged in on mount
-  useEffect(() => {
-    const savedUser = localStorage.getItem('curecast-user');
-    
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setCurrentUser(parsedUser);
-        
-        // Load medical history for this user
-        const userRecords = medicalRecords.filter(record => record.userId === parsedUser.id);
-        setUserMedicalHistory(userRecords);
-      } catch (error) {
-        console.error('Failed to parse user data:', error);
-        localStorage.removeItem('curecast-user');
-      }
-    }
-  }, []);
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<UserProfile | null>(null);
 
-  const login = async (phoneNumber: string): Promise<boolean> => {
-    // Mock API call with delay
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const foundUser = users.find(user => user.phoneNumber === phoneNumber);
-    
-    if (foundUser) {
-      setCurrentUser(foundUser);
-      localStorage.setItem('curecast-user', JSON.stringify(foundUser));
-      
-      // Load medical history for this user
-      const userRecords = medicalRecords.filter(record => record.userId === foundUser.id);
-      setUserMedicalHistory(userRecords);
-      
-      return true;
-    }
-    
-    return false;
+  const updateProfile = (updates: Partial<UserProfile>) => {
+    setUser(prev => prev ? { ...prev, ...updates } : null);
   };
 
-  const register = async (userData: Partial<User>): Promise<boolean> => {
-    // Mock API call with delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if phone number already exists
-    if (userData.phoneNumber && users.some(u => u.phoneNumber === userData.phoneNumber)) {
-      return false;
-    }
-    
-    // Create new user
-    const newUser: User = {
-      id: `u${users.length + 1}`,
-      name: userData.name || 'Anonymous',
-      phoneNumber: userData.phoneNumber,
-      age: userData.age,
-      gender: userData.gender,
-      language: userData.language || 'english',
-      location: userData.location,
-      createdAt: new Date().toISOString(),
-    };
-    
-    // In a real app, this would be an API call to create the user
-    // For mock, we'd update our local array (though this doesn't persist on reload)
-    users.push(newUser);
-    
-    // Log user in
-    setCurrentUser(newUser);
-    localStorage.setItem('curecast-user', JSON.stringify(newUser));
-    
-    return true;
-  };
-
-  const logout = () => {
-    setCurrentUser(null);
-    setUserMedicalHistory([]);
-    localStorage.removeItem('curecast-user');
-  };
-
-  const addMedicalRecord = (record: Omit<MedicalRecord, 'id' | 'userId' | 'date'>) => {
-    if (!currentUser) return;
-    
-    const newRecord: MedicalRecord = {
-      id: `mr${medicalRecords.length + 1}`,
-      userId: currentUser.id,
-      date: new Date().toISOString(),
-      ...record
-    };
-    
-    // In a real app, this would be an API call
-    medicalRecords.push(newRecord);
-    setUserMedicalHistory(prev => [...prev, newRecord]);
+  const updateNotificationPreferences = (updates: Partial<UserProfile['notificationPreferences']>) => {
+    setUser(prev => prev ? {
+      ...prev,
+      notificationPreferences: {
+        ...prev.notificationPreferences,
+        ...updates,
+      },
+    } : null);
   };
 
   return (
-    <UserContext.Provider 
-      value={{ 
-        currentUser, 
-        login, 
-        logout, 
-        register, 
-        isAuthenticated: !!currentUser,
-        userMedicalHistory,
-        addMedicalRecord
-      }}
-    >
+    <UserContext.Provider value={{
+      user,
+      setUser,
+      updateProfile,
+      updateNotificationPreferences,
+    }}>
       {children}
     </UserContext.Provider>
   );
