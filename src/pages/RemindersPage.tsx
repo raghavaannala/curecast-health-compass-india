@@ -1,20 +1,16 @@
 
-import ChatInterface from '../components/chatbot/ChatInterface';
 import { useUser } from '@/contexts/UserContext';
 import { Navigate } from 'react-router-dom';
+import RemindersView from '../components/reminders/RemindersView';
 
-const Index = () => {
+const RemindersPage = () => {
   const { isAuthenticated } = useUser();
   
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
   
-  return (
-    <div className="h-[calc(100vh-120px)]">
-      <ChatInterface />
-    </div>
-  );
+  return <RemindersView />;
 };
 
-export default Index;
+export default RemindersPage;

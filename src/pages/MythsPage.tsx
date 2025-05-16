@@ -1,20 +1,16 @@
 
-import ChatInterface from '../components/chatbot/ChatInterface';
 import { useUser } from '@/contexts/UserContext';
 import { Navigate } from 'react-router-dom';
+import MythsView from '../components/myths/MythsView';
 
-const Index = () => {
+const MythsPage = () => {
   const { isAuthenticated } = useUser();
   
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
   
-  return (
-    <div className="h-[calc(100vh-120px)]">
-      <ChatInterface />
-    </div>
-  );
+  return <MythsView />;
 };
 
-export default Index;
+export default MythsPage;

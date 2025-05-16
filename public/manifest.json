@@ -1,0 +1,22 @@
+
+{
+  "name": "CureCast: Rural Health Companion",
+  "short_name": "CureCast",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1A1F2C",
+  "theme_color": "#1A1F2C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
