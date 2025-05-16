@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,35 +19,40 @@ import MythsPage from "./pages/MythsPage";
 import AdminPage from "./pages/AdminPage";
 import AppLayout from "./components/layout/AppLayout";
 
+// Create a client
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <LanguageProvider>
-      <UserProvider>
-        <RemindersProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route element={<AppLayout />}>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/reminders" element={<RemindersPage />} />
-                  <Route path="/myths" element={<MythsPage />} />
-                  <Route path="/admin" element={<AdminPage />} />
-                </Route>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </RemindersProvider>
-      </UserProvider>
-    </LanguageProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  return (
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <LanguageProvider>
+          <UserProvider>
+            <RemindersProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route element={<AppLayout />}>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/reminders" element={<RemindersPage />} />
+                      <Route path="/myths" element={<MythsPage />} />
+                      <Route path="/admin" element={<AdminPage />} />
+                    </Route>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </RemindersProvider>
+          </UserProvider>
+        </LanguageProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
+  );
+};
 
 export default App;
