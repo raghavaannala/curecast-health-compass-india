@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY, API_CONFIG } from '@/config/api';
-import { Stethoscope, Loader2, Send, AlertTriangle, Info, ChevronDown, User, Bot, Heart, Wind, Pill, Phone, Clock } from 'lucide-react';
+import { Stethoscope, Loader2, Send, AlertTriangle, Info, ChevronDown, User, Bot, Heart, Wind, Pill, Phone, Clock, Mic, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,45 +19,51 @@ import {
   TypingIndicator
 } from '@/styles/ChatStyles';
 
-// Basic symptom-disease mapping for rule-based responses
+// Enhanced symptom-disease mapping with photo requirements
 const SYMPTOM_RULES = {
-  fever: {
-    symptoms: ['fever', 'temperature', 'hot', 'chills'],
+  snakebite: {
+    symptoms: ['snake', 'bite', 'snake bite', 'bitten', 'venom', 'poisonous'],
+    requiresPhoto: true,
+    photoPrompt: "It's crucial to get a clear photo of the bite area. This will help assess the severity and type of snake bite. Please use the camera button to take or upload a clear photo showing:\n- The bite marks\n- Any swelling or discoloration\n- The surrounding area\n\nWhile you do this, please also tell me:\n- When did the bite occur?\n- Did you see the snake? If yes, what did it look like?\n- Are you experiencing any symptoms like dizziness or numbness?",
     conditions: {
-      mild: "Common cold or mild viral infection",
-      moderate: "Flu or bacterial infection",
-      severe: "Severe infection or COVID-19"
+      mild: "Possible dry bite or non-venomous snake bite",
+      moderate: "Venomous snake bite requiring immediate attention",
+      severe: "Severe envenomation requiring emergency care"
     },
     recommendations: {
-      mild: { action: "self-care", text: "Rest, stay hydrated, and monitor temperature" },
-      moderate: { action: "visit clinic", text: "Schedule a check-up within 24 hours" },
+      mild: { action: "visit clinic", text: "While it may be a non-venomous bite, medical evaluation is necessary for proper assessment" },
+      moderate: { action: "emergency", text: "Proceed to emergency care immediately. Keep the affected area below heart level" },
+      severe: { action: "emergency", text: "IMMEDIATE EMERGENCY CARE REQUIRED. Call emergency services now" }
+    }
+  },
+  skin: {
+    symptoms: ['rash', 'skin', 'itchy', 'itching', 'hives', 'spots', 'allergic', 'dermatitis'],
+    requiresPhoto: true,
+    photoPrompt: "To provide an accurate assessment of your skin condition, please use the camera button to take or upload a clear photo showing:\n- The affected area\n- Any patterns or texture changes\n- The surrounding healthy skin for comparison\n\nPlease also describe:\n- When did you first notice these symptoms?\n- Is there any itching, burning, or pain?\n- Have you used any medications on the area?",
+    conditions: {
+      mild: "Minor skin irritation or contact dermatitis",
+      moderate: "Acute allergic reaction or infection",
+      severe: "Severe allergic reaction or spreading infection"
+    },
+    recommendations: {
+      mild: { action: "self-care", text: "Monitor the condition and try over-the-counter treatments" },
+      moderate: { action: "visit clinic", text: "Schedule an appointment with a dermatologist" },
       severe: { action: "emergency", text: "Seek immediate medical attention" }
     }
   },
-  headache: {
-    symptoms: ['headache', 'migraine', 'head pain'],
+  wound: {
+    symptoms: ['cut', 'wound', 'injury', 'bleeding', 'scrape', 'burn', 'laceration'],
+    requiresPhoto: true,
+    photoPrompt: "For proper wound assessment, please use the camera button to take or upload a clear photo showing:\n- The entire wound area\n- Any bleeding or discharge\n- The depth of the wound if visible\n\nPlease also tell me:\n- How did the injury occur?\n- When did it happen?\n- Is there active bleeding?\n- When was your last tetanus shot?",
     conditions: {
-      mild: "Tension headache",
-      moderate: "Migraine",
-      severe: "Severe migraine or potential neurological issue"
+      mild: "Superficial wound or minor cut",
+      moderate: "Deep cut or wound requiring medical attention",
+      severe: "Severe injury requiring immediate care"
     },
     recommendations: {
-      mild: { action: "self-care", text: "Rest in a quiet dark room, stay hydrated" },
-      moderate: { action: "visit clinic", text: "Consult a doctor for proper diagnosis" },
-      severe: { action: "emergency", text: "Seek immediate medical attention" }
-    }
-  },
-  cough: {
-    symptoms: ['cough', 'coughing', 'chest congestion'],
-    conditions: {
-      mild: "Common cold or mild allergies",
-      moderate: "Bronchitis or persistent infection",
-      severe: "Severe respiratory infection"
-    },
-    recommendations: {
-      mild: { action: "self-care", text: "Rest, stay hydrated, use honey for cough" },
-      moderate: { action: "visit clinic", text: "Get checked for proper treatment" },
-      severe: { action: "emergency", text: "Seek immediate medical attention" }
+      mild: { action: "self-care", text: "Clean the wound and apply appropriate first aid" },
+      moderate: { action: "visit clinic", text: "Seek medical attention for proper wound care" },
+      severe: { action: "emergency", text: "Immediate emergency care required" }
     }
   }
 };
@@ -76,6 +82,8 @@ interface ChatMessage {
     careAdvice?: string;
     whenToSeekHelp?: string;
   };
+  imageUrl?: string;
+  sourceType?: 'text' | 'voice' | 'camera';
 }
 
 const getInitialGreeting = (language: string) => {
@@ -89,7 +97,23 @@ const getInitialGreeting = (language: string) => {
   }
 };
 
-const DrCureCast: React.FC = () => {
+interface DrCureCastProps {
+  onVoiceInputRequest: () => void;
+  onCameraInputRequest: () => void;
+  voiceInput?: string | null;
+  cameraInput?: { imageUrl: string, description: string } | null;
+  onVoiceInputProcessed?: () => void;
+  onCameraInputProcessed?: () => void;
+}
+
+const DrCureCast: React.FC<DrCureCastProps> = ({ 
+  onVoiceInputRequest, 
+  onCameraInputRequest, 
+  voiceInput, 
+  cameraInput,
+  onVoiceInputProcessed,
+  onCameraInputProcessed
+ }) => {
   const { currentLanguage } = useLanguage();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -108,6 +132,36 @@ const DrCureCast: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+  
+  // Process voice input when it changes
+  useEffect(() => {
+    if (voiceInput) {
+      // Set loading state
+      setIsProcessing(true);
+      // Add a slight delay to ensure UI updates properly
+      setTimeout(() => {
+        handleSendMessage(voiceInput, 'voice');
+        if (onVoiceInputProcessed) {
+          onVoiceInputProcessed();
+        }
+      }, 300);
+    }
+  }, [voiceInput]);
+  
+  // Process camera input when it changes
+  useEffect(() => {
+    if (cameraInput) {
+      // Set loading state
+      setIsProcessing(true);
+      // Add a slight delay to ensure UI updates properly
+      setTimeout(() => {
+        handleSendMessage(cameraInput.description, 'camera', cameraInput.imageUrl);
+        if (onCameraInputProcessed) {
+          onCameraInputProcessed();
+        }
+      }, 300);
+    }
+  }, [cameraInput]);
 
   // Update greeting when language changes
   useEffect(() => {
@@ -117,53 +171,68 @@ const DrCureCast: React.FC = () => {
     }]);
   }, [currentLanguage]);
 
-  const analyzeSymptoms = (text: string): { severity: 'low' | 'medium' | 'high', condition: string, recommendation: { action: string, text: string } } => {
-    const textLower = text.toLowerCase();
-    let matchedRule: any = null;
-    let severity: 'low' | 'medium' | 'high' = 'low';
+  const analyzeSymptoms = (text: string): { 
+  severity: 'low' | 'medium' | 'high', 
+  condition: string, 
+  recommendation: { action: string, text: string },
+  requiresPhoto?: boolean,
+  photoPrompt?: string
+} => {
+  const textLower = text.toLowerCase();
+  let matchedRule: any = null;
+  let severity: 'low' | 'medium' | 'high' = 'low';
+  let ruleKey: string = '';
 
-    // Find matching symptoms
-    for (const [key, rule] of Object.entries(SYMPTOM_RULES)) {
-      if (rule.symptoms.some(symptom => textLower.includes(symptom))) {
-        matchedRule = rule;
-        
-        // Determine severity based on keywords
-        if (textLower.includes('severe') || textLower.includes('intense') || textLower.includes('worst')) {
-          severity = 'high';
-        } else if (textLower.includes('moderate') || textLower.includes('bad')) {
-          severity = 'medium';
-        }
-        break;
+  // Find matching symptoms
+  for (const [key, rule] of Object.entries(SYMPTOM_RULES)) {
+    if (rule.symptoms.some(symptom => textLower.includes(symptom))) {
+      matchedRule = rule;
+      ruleKey = key;
+      
+      // Determine severity based on keywords and condition type
+      if (textLower.includes('severe') || textLower.includes('intense') || textLower.includes('worst') || key === 'snakebite') {
+        severity = 'high';
+      } else if (textLower.includes('moderate') || textLower.includes('bad')) {
+        severity = 'medium';
       }
+      break;
     }
+  }
 
-    if (!matchedRule) {
-      return {
-        severity: 'medium' as const,
-        condition: "Unspecified condition",
-        recommendation: {
-          action: "visit clinic",
-          text: "Please consult a healthcare professional for proper diagnosis"
-        }
-      };
-    }
-
-    const severityMap = {
-      'low': 'mild',
-      'medium': 'moderate',
-      'high': 'severe'
-    } as const;
-
+  if (!matchedRule) {
     return {
-      severity,
-      condition: matchedRule.conditions[severityMap[severity]],
-      recommendation: matchedRule.recommendations[severityMap[severity]]
+      severity: 'medium' as const,
+      condition: "Unspecified condition",
+      recommendation: {
+        action: "visit clinic",
+        text: "Please consult a healthcare professional for proper diagnosis"
+      }
     };
+  }
+
+  const severityMap = {
+    'low': 'mild',
+    'medium': 'moderate',
+    'high': 'severe'
+  } as const;
+
+  return {
+    severity,
+    condition: matchedRule.conditions[severityMap[severity]],
+    recommendation: matchedRule.recommendations[severityMap[severity]],
+    requiresPhoto: matchedRule.requiresPhoto,
+    photoPrompt: matchedRule.photoPrompt
+  };
   };
 
   const processAIResponse = (response: string): { text: string, sections: { assessment?: string, causes?: string, careAdvice?: string, whenToSeekHelp?: string } } => {
-    // Remove any asterisks from the response
-    const cleanedResponse = response.replace(/\*/g, '');
+    console.log('Raw AI response:', response); // Log for debugging
+    
+    // Remove any asterisks, bullet points, and other formatting from the response
+    const cleanedResponse = response
+      .replace(/\*/g, '')
+      .replace(/^\s*[-•]\s*/gm, '')
+      .replace(/^\s*\d+\.\s*/gm, '');
     
     // Default structured response
     const defaultResponse = {
@@ -172,22 +241,34 @@ const DrCureCast: React.FC = () => {
     };
 
     try {
-      // Try to split the response into sections
-      const assessmentMatch = cleanedResponse.match(/Initial assessment:?(.*?)(?=(Possible causes|$))/is);
-      const causesMatch = cleanedResponse.match(/Possible causes:?(.*?)(?=(Immediate care advice|$))/is);
-      const careAdviceMatch = cleanedResponse.match(/Immediate care advice:?(.*?)(?=(When to seek medical attention|$))/is);
-      const whenToSeekHelpMatch = cleanedResponse.match(/When to seek medical attention:?(.*)/is);
+      // More robust pattern matching for sections
+      const assessmentMatch = cleanedResponse.match(/(?:Initial assessment|Assessment):?\s*(.*?)(?=(?:Possible causes|Causes|Immediate care|When to seek|$))/is);
+      const causesMatch = cleanedResponse.match(/(?:Possible causes|Causes):?\s*(.*?)(?=(?:Immediate care|Care advice|When to seek|$))/is);
+      const careAdviceMatch = cleanedResponse.match(/(?:Immediate care advice|Care advice|Home care):?\s*(.*?)(?=(?:When to seek|Medical attention|$))/is);
+      const whenToSeekHelpMatch = cleanedResponse.match(/(?:When to seek medical attention|Medical attention|Seek help):?\s*(.*)/is);
 
       // Build structured sections if matches found
       if (assessmentMatch || causesMatch || careAdviceMatch || whenToSeekHelpMatch) {
+        // Process each section to clean up formatting
+        const processSection = (text?: string) => {
+          if (!text) return undefined;
+          return text.trim()
+            .replace(/\n+/g, ' ')
+            .replace(/\s{2,}/g, ' ')
+            .replace(/^[\s,.:;-]+/, '')
+            .replace(/[\s,.:;-]+$/, '');
+        };
+        
+        const cleanedSections = {
+          assessment: processSection(assessmentMatch?.[1]),
+          causes: processSection(causesMatch?.[1]),
+          careAdvice: processSection(careAdviceMatch?.[1]),
+          whenToSeekHelp: processSection(whenToSeekHelpMatch?.[1])
+        };
+        
         return {
           text: cleanedResponse,
-          sections: {
-            assessment: assessmentMatch ? assessmentMatch[1].trim() : undefined,
-            causes: causesMatch ? causesMatch[1].trim() : undefined,
-            careAdvice: careAdviceMatch ? careAdviceMatch[1].trim() : undefined,
-            whenToSeekHelp: whenToSeekHelpMatch ? whenToSeekHelpMatch[1].trim() : undefined
-          }
+          sections: cleanedSections
         };
       }
       
@@ -198,35 +279,89 @@ const DrCureCast: React.FC = () => {
     }
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isProcessing) return;
-
-    const userMessage: ChatMessage = {
-      text: input,
-      isUser: true
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+  const handleSendMessage = async (messageText = input.trim(), sourceType: 'text' | 'voice' | 'camera' = 'text', imageUrl?: string) => {
+    if (!messageText && !imageUrl) return;
+    
+    const userMessage = messageText.trim();
     setInput('');
+    
+    // Add user message to chat
+    setMessages(prev => [...prev, { 
+      text: userMessage, 
+      isUser: true,
+      sourceType,
+      imageUrl
+    }]);
     setIsProcessing(true);
 
     try {
+      // Check if this is just a simple greeting
+      const simpleGreeting = isSimpleGreeting(userMessage.toLowerCase().trim());
+      if (simpleGreeting) {
+        // Respond with a natural greeting instead of a medical assessment
+        setMessages(prev => [
+          ...prev,
+          {
+            text: simpleGreeting,
+            isUser: false
+          }
+        ]);
+        setIsProcessing(false);
+        return;
+      }
+
       // First, analyze symptoms using rule-based system
-      const analysis = analyzeSymptoms(input);
+      const analysis = analyzeSymptoms(userMessage);
+
+      // If condition requires a photo and no image is provided, prompt for one
+      if (analysis.requiresPhoto && !imageUrl && sourceType !== 'camera') {
+        setMessages(prev => [
+          ...prev,
+          {
+            text: analysis.photoPrompt || "Please provide a photo for better assessment. You can use the camera button below.",
+            isUser: false,
+            severity: analysis.severity,
+            recommendation: {
+              action: "provide photo",
+              text: "Use the camera button to take or upload a photo"
+            }
+          }
+        ]);
+        setIsProcessing(false);
+        return;
+      }
+
+      // Prepare input based on source type
+      let promptInput = userMessage;
+      let promptPrefix = '';
+      let promptSuffix = '';
+      
+      if (sourceType === 'camera' && imageUrl) {
+        promptPrefix = 'I am analyzing a medical image. ';
+        promptInput = `The patient has uploaded an image and described it as: "${userMessage}". `;
+        promptSuffix = 'Based on this visual description, I will provide a medical assessment, but please note that a definitive diagnosis requires in-person examination.';
+      } else if (sourceType === 'voice') {
+        promptPrefix = 'I am analyzing symptoms described via voice. ';
+        promptInput = `The patient has described via voice: "${userMessage}". `;
+        promptSuffix = 'I will provide an assessment based on these reported symptoms.';
+      }
 
       // Then get detailed response from Gemini
-      const prompt = `You are Dr.CureCast, a professional medical physician with extensive experience. A patient has described their symptoms as: "${input}". 
+      const prompt = `You are Dr.CureCast, a professional medical physician with extensive experience. ${promptPrefix}A patient has described their symptoms as: "${promptInput}". ${promptSuffix}
       
       Please provide a concise, professional medical response in ${currentLanguage} using clear but medically appropriate language. Remember that you are a qualified doctor and should respond with the authority and professionalism expected of a medical professional.
       
-      Structure your response clearly with these sections:
-      1. Initial assessment: Provide a brief professional assessment (2-3 sentences)
-      2. Possible causes: List 2-3 potential diagnoses (use professional medical terms where appropriate)
-      3. Immediate care advice: Provide evidence-based recommendations for home care
-      4. When to seek medical attention: Clear clinical indicators that warrant professional medical attention
+      Structure your response with these EXACT sections in this EXACT order:
+      Initial assessment: Provide a brief professional assessment
+      Possible causes: List potential diagnoses (use professional medical terms where appropriate)
+      Immediate care advice: Provide evidence-based recommendations for home care
+      When to seek medical attention: Clear clinical indicators that warrant professional medical attention
       
-      Use language appropriate for a doctor-patient consultation. Maintain a calm, authoritative, and reassuring tone throughout.
-      Do NOT use asterisks (*) or informal formatting in your response.`;
+      Keep your language professional and appropriate for a doctor-patient consultation. Maintain a calm, authoritative, and reassuring tone throughout.
+      Do NOT use asterisks (*), numbers (1., 2.), bullet points, or any special formatting in your response.
+      Each section MUST be clearly labeled with the exact section names provided above.
+      
+      If the input is in Hindi or Telugu, respond in that same language. Otherwise respond in English.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -279,7 +414,61 @@ const DrCureCast: React.FC = () => {
     }
   };
 
-  // Get severity color
+  // Detect simple greetings and return appropriate responses
+  const isSimpleGreeting = (text: string): string | null => {
+    const greetings = {
+      'hi': "Hello there! How can I assist with your health concerns today?",
+      'hello': "Hello! How can I help you with your health today?",
+      'hey': "Hello! What health concerns can I address for you today?",
+      'hii': "Hello! How may I assist you with your health concerns?",
+      'hiii': "Hello! How may I assist you with your health concerns?",
+      'hiiii': "Hello! How may I assist you with your health concerns?",
+      'helo': "Hello! How can I help you with your health today?",
+      'hellow': "Hello! How can I help you with your health today?",
+      'hola': "Hello! How can I help you with your health today?",
+      'namaste': "Namaste! How can I assist with your health concerns today?",
+      'good morning': "Good morning! How can I help you with your health today?",
+      'good afternoon': "Good afternoon! How can I help you with your health today?",
+      'good evening': "Good evening! How can I help you with your health today?",
+      'how are you': "I'm well, thank you for asking. More importantly, how are you feeling today? Any health concerns I can help with?"
+    };
+
+    // Check if input matches any greeting
+    for (const [greeting, response] of Object.entries(greetings)) {
+      if (text === greeting || text.startsWith(`${greeting} `)) {
+        return response;
+      }
+    }
+    
+    // If no greeting match is found, return null to proceed with normal medical assessment
+    return null;
+  };
+
+  // Function to handle voice input from external component
+  const handleVoiceInput = (transcript: string) => {
+    if (transcript.trim()) {
+      handleSendMessage(transcript, 'voice');
+    }
+  };
+
+  // Function to handle camera input from external component
+  const handleCameraInput = (imageUrl: string, description: string = '') => {
+    handleSendMessage(description || 'Please analyze this image.', 'camera', imageUrl);
+  };
+
+  // Expose functions to parent component
+  useEffect(() => {
+    // Add these methods to the window object for external access
+    (window as any).drCureCastHandleVoiceInput = handleVoiceInput;
+    (window as any).drCureCastHandleCameraInput = handleCameraInput;
+    
+    return () => {
+      // Clean up
+      delete (window as any).drCureCastHandleVoiceInput;
+      delete (window as any).drCureCastHandleCameraInput;
+    };
+  }, []);
+
   const getSeverityColor = (severity?: 'low' | 'medium' | 'high') => {
     switch (severity) {
       case 'low': return 'bg-green-100 text-green-700 border-green-200';
@@ -358,7 +547,7 @@ const DrCureCast: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-12rem)] max-w-3xl mx-auto">
+    <div id="dr-curecast-component" className="flex flex-col h-[calc(100vh-12rem)] max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-4 p-4 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-xl shadow-sm">
         <div className="p-2 rounded-full bg-white/90 shadow-sm">
           <Stethoscope className="h-7 w-7 text-primary-600" />
@@ -377,9 +566,11 @@ const DrCureCast: React.FC = () => {
                 <div className={`flex gap-3 max-w-[80%] ${msg.isUser ? 'flex-row-reverse' : 'flex-row'}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.isUser ? 'bg-blue-100' : 'bg-green-100'}`}>
                     {msg.isUser ? (
-                      <User size={16} className="text-blue-600" />
+                      msg.sourceType === 'voice' ? <Mic className="h-5 w-5" /> : 
+                      msg.sourceType === 'camera' ? <Camera className="h-5 w-5" /> : 
+                      <User className="h-5 w-5" />
                     ) : (
-                      <Bot size={16} className="text-green-600" />
+                      <Bot className="h-5 w-5" />
                     )}
                   </div>
                   
@@ -459,11 +650,33 @@ const DrCureCast: React.FC = () => {
         </div>
 
         <div className="p-4 border-t border-gray-200 bg-white">
+          <div className="flex gap-2 mb-2">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={onVoiceInputRequest}
+              disabled={isProcessing}
+              className="flex items-center gap-1 text-primary-600 border-primary-200 hover:bg-primary-50"
+            >
+              <Mic className="h-4 w-4" />
+              Voice Input
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={onCameraInputRequest}
+              disabled={isProcessing}
+              className="flex items-center gap-1 text-primary-600 border-primary-200 hover:bg-primary-50"
+            >
+              <Camera className="h-4 w-4" />
+              Camera Input
+            </Button>
+          </div>
           <form 
             className="flex gap-2"
             onSubmit={(e) => {
               e.preventDefault();
-              handleSend();
+              handleSendMessage();
             }}
           >
             <Input

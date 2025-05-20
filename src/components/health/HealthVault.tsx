@@ -50,42 +50,42 @@ const HealthVault: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {records.map((record) => (
-          <Card key={record.id} className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className="font-semibold truncate">{record.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(record.date).toLocaleDateString()}
-                </p>
+      {records.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {records.map((record) => (
+            <Card key={record.id} className="p-4 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold truncate">{record.title}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(record.date).toLocaleDateString()}
+                  </p>
+                </div>
+                <File className="w-5 h-5 text-primary" />
               </div>
-              <File className="w-5 h-5 text-primary" />
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1">
-                View
-              </Button>
-              <Button variant="outline" size="sm" className="flex-1">
-                Share
-              </Button>
-            </div>
-          </Card>
-        ))}
-
-        {records.length === 0 && (
-          <div className="col-span-full flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg">
-            <Upload className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="font-semibold text-lg mb-2">No Records Yet</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Upload your medical records, prescriptions, and test reports to keep them organized
-            </p>
-            <Button onClick={() => document.getElementById('file-upload')?.click()}>
-              Upload First Record
-            </Button>
-          </div>
-        )}
-      </div>
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1">
+                  View
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1">
+                  Share
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-lg">
+          <Upload className="w-12 h-12 text-muted-foreground mb-4" />
+          <h3 className="font-semibold text-lg mb-2">No Records Yet</h3>
+          <p className="text-muted-foreground text-center mb-4 max-w-md">
+            Upload your medical records, prescriptions, and test reports to keep them organized
+          </p>
+          <Button onClick={() => document.getElementById('file-upload')?.click()}>
+            Upload First Record
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

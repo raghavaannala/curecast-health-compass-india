@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { Toaster } from '@/components/ui/toaster';
+import { UserProvider } from '@/contexts/UserContext';
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
@@ -23,9 +24,11 @@ if (!rootElement) throw new Error('Root element not found');
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <LanguageProvider>
-      <App />
-      <Toaster />
-    </LanguageProvider>
+    <UserProvider>
+      <LanguageProvider>
+        <App />
+        <Toaster />
+      </LanguageProvider>
+    </UserProvider>
   </React.StrictMode>
 );
