@@ -205,7 +205,7 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
     "Flu",
     "Headache"
   ];
-  
+
   // Initialize Gemini with safeguards
   const geminiApi = React.useMemo(() => {
     try {
@@ -330,7 +330,7 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
           reject('Video stream timed out');
         }, 10000);
       });
-      
+
       await videoRef.current.play();
       setCapturedImage(null);
       setAnalysisResult(null);
@@ -339,7 +339,7 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
       console.error('Error starting camera:', error);
       
       let errorMessage = 'Failed to start camera. ';
-      
+
       // Handle specific error cases
       if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
         errorMessage += 'Please grant camera permission and try again.';
@@ -422,7 +422,7 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
       // Set canvas dimensions to optimized size
       canvasRef.current.width = width;
       canvasRef.current.height = height;
-        
+          
       // Draw the current video frame with optimized dimensions
       context.drawImage(
         videoRef.current, 
@@ -460,7 +460,7 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
       } catch (e) {
         console.error("Could not restart camera after failed capture:", e);
       }
-    }
+        }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -659,8 +659,8 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
         variant: "destructive"
       });
       return;
-    }
-    
+      }
+      
     // Set an initial processing state
     setAnalysisResult("Analyzing image...");
     
@@ -674,7 +674,7 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
       const promptText = `You are a medical AI assistant analyzing an image. 
         Please analyze this image showing a potential ${selectedConditionData.name.toLowerCase()}. 
         ${selectedConditionData.prompt}
-
+        
         Provide your analysis in the following EXACT format with these EXACT section headings:
 
         Assessment:
@@ -1083,7 +1083,7 @@ Please try again or contact support if this issue persists.`);
           6. When should someone with ${disease} see a doctor?
           
           Format your response in a clear, conversational way that's easy for patients to understand.`;
-        
+
         // Create a timeout promise
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error("Request timed out")), 10000);
@@ -1096,7 +1096,7 @@ Please try again or contact support if this issue persists.`);
           const response = await result.response;
           return response.text();
         })();
-        
+
         // Race between the API call and the timeout
         const apiResponse = await Promise.race([apiRequestPromise, timeoutPromise]);
         
@@ -1548,7 +1548,7 @@ Please try again or contact support if this issue persists.`);
               </AlertDescription>
             </Alert>
           )}
-        </div>
+          </div>
       </div>
     </div>
   );

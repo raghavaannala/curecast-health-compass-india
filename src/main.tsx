@@ -26,12 +26,12 @@ if (!rootElement) throw new Error('Root element not found');
 createRoot(rootElement).render(
   <React.StrictMode>
     <UserProvider>
-      <LanguageProvider>
+    <LanguageProvider>
         <BrowserRouter>
-          <App />
-          <Toaster />
+      <App />
+      <Toaster />
         </BrowserRouter>
-      </LanguageProvider>
+    </LanguageProvider>
     </UserProvider>
   </React.StrictMode>
 );

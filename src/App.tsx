@@ -9,7 +9,7 @@ import Navbar from '@/components/ui/navbar';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { app, auth } from './firebase';
-import { Stethoscope, MapPin, Bell, Phone, Shield, Brain, Menu, X, LogIn, ArrowRight, Camera, Globe, FileText, Mic, ChevronLeft, User, Info, Crown } from 'lucide-react';
+import { Stethoscope, MapPin, Bell, Phone, Shield, Brain, Menu, X, LogIn, ArrowRight, Camera, Globe, FileText, Mic, ChevronLeft, User, Info, Crown, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -121,15 +121,17 @@ const App: React.FC = () => {
     };
   }, [requestedFeature]);
 
+  const handleLoginClick = () => {
+    setShowLoginModal(true);
+  };
+
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
     setShowLoginModal(false);
-    
-    // If there was a requested feature, navigate to it after login
-    if (requestedFeature) {
-      navigate(requestedFeature);
-      setRequestedFeature(null);
-    }
+    toast({
+      title: "Welcome back!",
+      description: "You've successfully signed in.",
+    });
   };
 
   // Simplified and focused logout function
@@ -141,23 +143,21 @@ const App: React.FC = () => {
       sessionStorage.clear();
       setIsLoggedIn(false);
       await auth.signOut();
-      navigate('/');
-      window.location.reload();
+      toast({
+        title: "Signed out",
+        description: "You've been successfully signed out.",
+      });
     } catch (error) {
       console.error("Error during logout:", error);
       setAuthError("Failed to sign out. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle feature access
+  // Handle feature access - removed auth check
   const handleFeatureAccess = (path: string) => {
-    if (['/chat', '/profile', '/health', '/voice', '/camera', '/education'].includes(path) && !isLoggedIn) {
-      setRequestedFeature(path);
-      setShowLoginModal(true);
-    } else {
-      navigate(path);
-    }
+    navigate(path);
   };
 
   // Handle voice input from VoiceInterface
@@ -191,11 +191,6 @@ const App: React.FC = () => {
 
   // Modify openCameraInterface to use navigation
   const openCameraInterface = () => {
-    if (!isLoggedIn) {
-      setRequestedFeature('camera');
-      setShowLoginModal(true);
-      return;
-    }
     navigate('/camera');
   };
 
@@ -224,15 +219,6 @@ const App: React.FC = () => {
             <p className="text-xl md:text-2xl text-white/90">
               CureCast offers healthcare guidance, resources, and support designed for everyone
             </p>
-            {!isLoggedIn && (
-              <button 
-                onClick={() => setShowLoginModal(true)}
-                className="mt-6 px-8 py-3 bg-white text-primary-600 rounded-full text-lg font-medium hover:bg-primary-50 transition-all duration-300 hover:shadow-xl hover:scale-105 flex items-center gap-2 mx-auto"
-              >
-                <LogIn className="h-5 w-5" />
-                Sign in for full access
-              </button>
-            )}
           </div>
           
           {/* Animated wave effect at bottom */}
@@ -492,6 +478,7 @@ const App: React.FC = () => {
               <p className="text-xs text-white/80">Excellence in AI Health Guidance</p>
             </div>
           </div>
+
           <div className="flex items-center gap-4">
             {user?.name && (
               <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-5 py-2 rounded-xl shadow-lg text-white">
@@ -505,12 +492,38 @@ const App: React.FC = () => {
               <span className="text-xs text-white/70 block">Developed by</span>
               <span className="text-sm text-white font-medium">Raghava Annala</span>
             </div>
+            {/* Sign in/out button */}
+            {isLoggedIn ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white hover:bg-white/10"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLoginClick}
+                className="text-white hover:bg-white/10"
+              >
+                <LogIn className="h-4 w-4 mr-2" />
+                Sign In
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
       {/* Navbar component */}
-      <Navbar isLoggedIn={isLoggedIn} />
+      <Navbar 
+        isLoggedIn={isLoggedIn}
+        onLoginClick={handleLoginClick}
+        onLogoutClick={handleLogout}
+      />
       
       {/* Login Modal */}
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
@@ -587,16 +600,16 @@ const App: React.FC = () => {
           <Route path="/" element={renderDashboard()} />
           <Route path="/chat" element={
             <DrCureCast 
-              voiceInput={voiceInput} 
-              cameraInput={cameraInput} 
+              voiceInput={voiceInput}
+              cameraInput={cameraInput}
               onVoiceInputRequest={() => setShowVoiceInterface(true)}
               onCameraInputRequest={() => setShowCameraInterface(true)}
             />
           } />
-          <Route path="/profile" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/" />} />
-          <Route path="/health" element={isLoggedIn ? <HealthVault /> : <Navigate to="/" />} />
-          <Route path="/camera" element={isLoggedIn ? <CameraDiagnostics standalone={true} onImageCaptured={handleCameraInput} /> : <Navigate to="/" />} />
-          <Route path="/voice" element={isLoggedIn ? <VoiceInterface standalone={true} onTranscriptReady={handleVoiceInput} /> : <Navigate to="/" />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/health" element={<HealthVault />} />
+          <Route path="/camera" element={<CameraDiagnostics standalone={true} onImageCaptured={handleCameraInput} />} />
+          <Route path="/voice" element={<VoiceInterface standalone={true} onTranscriptReady={handleVoiceInput} />} />
           <Route path="/education" element={<HealthFactsPage />} />
           <Route path="/founders" element={<FoundersPage />} />
         </Routes>

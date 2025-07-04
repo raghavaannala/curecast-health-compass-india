@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, ChevronLeft, ChevronRight, Settings, LogOut, Crown } from 'lucide-react';
+import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, ChevronLeft, ChevronRight, Settings, LogOut, Crown, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { auth } from '@/firebase';
 
 interface NavbarProps {
   isLoggedIn: boolean;
+  onLoginClick?: () => void;
+  onLogoutClick?: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
+const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -38,17 +41,53 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
   };
   
   const navItems = [
-    { id: 'founder', path: '/founders', label: 'Founders', icon: Crown, requiresAuth: false, color: 'text-yellow-600 bg-yellow-100 border-2 border-yellow-400 font-bold' },
-    { id: 'dashboard', path: '/', label: 'Home', icon: Home, requiresAuth: false, color: 'text-blue-600 bg-blue-100' },
-    { id: 'chat', path: '/chat', label: 'Dr.CureCast', icon: MessageSquare, requiresAuth: true, color: 'text-emerald-600 bg-emerald-100' },
-    { id: 'voice', path: '/voice', label: 'Voice', icon: Mic, requiresAuth: true, color: 'text-purple-600 bg-purple-100' },
-    { id: 'camera', path: '/camera', label: 'Camera', icon: Camera, requiresAuth: true, color: 'text-amber-600 bg-amber-100' },
-    { id: 'health', path: '/health', label: 'Health Vault', icon: Shield, requiresAuth: true, color: 'text-indigo-600 bg-indigo-100' },
-    { id: 'profile', path: '/profile', label: 'Profile', icon: User, requiresAuth: true, color: 'text-gray-600 bg-gray-100' },
+    { id: 'founder', path: '/founders', label: 'Founders', icon: Crown, color: 'text-yellow-600 bg-yellow-100 border-2 border-yellow-400 font-bold' },
+    { id: 'dashboard', path: '/', label: 'Home', icon: Home, color: 'text-blue-600 bg-blue-100' },
+    { id: 'chat', path: '/chat', label: 'Dr.CureCast', icon: MessageSquare, color: 'text-emerald-600 bg-emerald-100' },
+    { id: 'voice', path: '/voice', label: 'Voice', icon: Mic, color: 'text-purple-600 bg-purple-100' },
+    { id: 'camera', path: '/camera', label: 'Camera', icon: Camera, color: 'text-amber-600 bg-amber-100' },
+    { id: 'health', path: '/health', label: 'Health Vault', icon: Shield, color: 'text-indigo-600 bg-indigo-100' },
+    { id: 'profile', path: '/profile', label: 'Profile', icon: User, color: 'text-gray-600 bg-gray-100' },
   ];
 
   return (
     <>
+      {/* Top navigation bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 h-16">
+          {/* Logo and title */}
+          <div className="flex items-center gap-2">
+            <Stethoscope className="h-6 w-6 text-primary-600" />
+            <span className="text-lg font-semibold text-primary-800">CureCast</span>
+          </div>
+
+          {/* Auth button */}
+          <div className="flex items-center gap-2">
+            {isLoggedIn ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLogoutClick}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLoginClick}
+                className="flex items-center gap-2"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Sign In</span>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Mobile Bottom Navigation - with animations and toggle button */}
       <motion.div 
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[90] md:hidden"
@@ -58,7 +97,6 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
       >
         <div className="flex justify-around items-center py-2">
           {navItems
-            .filter(item => !item.requiresAuth || isLoggedIn)
             .slice(0, 4)
             .map((item, index) => (
               <motion.div
@@ -154,8 +192,6 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
                 {/* Navigation items with staggered animation */}
                 <div className="space-y-1.5">
                   {navItems.map((item, index) => {
-                    if (item.requiresAuth && !isLoggedIn) return null;
-                    
                     return (
                       <motion.div
                         key={item.id}
@@ -230,8 +266,6 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
           
           <div className="flex flex-col items-center space-y-4">
             {navItems.map((item, index) => {
-              if (item.requiresAuth && !isLoggedIn) return null;
-              
               return (
                 <motion.div
                   key={item.id}
