@@ -5,6 +5,7 @@ import './index.css';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { Toaster } from '@/components/ui/toaster';
 import { UserProvider } from '@/contexts/UserContext';
+import { BrowserRouter } from 'react-router-dom';
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
@@ -25,10 +26,12 @@ if (!rootElement) throw new Error('Root element not found');
 createRoot(rootElement).render(
   <React.StrictMode>
     <UserProvider>
-    <LanguageProvider>
-      <App />
-      <Toaster />
-    </LanguageProvider>
+      <LanguageProvider>
+        <BrowserRouter>
+          <App />
+          <Toaster />
+        </BrowserRouter>
+      </LanguageProvider>
     </UserProvider>
   </React.StrictMode>
 );

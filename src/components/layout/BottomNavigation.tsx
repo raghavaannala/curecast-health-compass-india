@@ -1,7 +1,6 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { MessageCircle, User, Bell, BookOpen, LayoutDashboard } from 'lucide-react';
+import { MessageCircle, User, Bell, BookOpen, LayoutDashboard, Camera, Mic } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useUser } from '@/contexts/UserContext';
 
@@ -17,6 +16,16 @@ const BottomNavigation = () => {
       path: '/',
       label: t('chatbot'),
       icon: <MessageCircle className="h-5 w-5" />,
+    },
+    {
+      path: '/camera',
+      label: t('camera'),
+      icon: <Camera className="h-5 w-5" />,
+    },
+    {
+      path: '/voice',
+      label: t('voice'),
+      icon: <Mic className="h-5 w-5" />,
     },
     {
       path: '/profile',

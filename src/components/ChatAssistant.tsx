@@ -8,13 +8,13 @@ import {
   Message,
   MessageBubble,
   InputContainer,
-  Input,
   SendButton,
   VoiceButton,
   TypingIndicator,
   SeverityIndicator,
   Recommendation
 } from '../styles/ChatStyles';
+import { Input } from '@/components/ui/input';
 
 // Basic symptom-disease mapping for rule-based responses
 const SYMPTOM_RULES = {
@@ -72,7 +72,7 @@ interface Message {
 const ChatAssistant: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     { 
-      text: "Hello! I'm Dr. CureCast, your healthcare assistant. Please describe your symptoms, and I'll help assess your condition.", 
+      text: "Hello! I'm Dr. CureCast. It's nice to meet you. How can I help you today?", 
       isUser: false 
     }
   ]);
@@ -183,8 +183,8 @@ const ChatAssistant: React.FC = () => {
   return (
     <ChatContainer>
       <Header>
-        <h1>Healthcare Assistant</h1>
-        <p>Powered by CureCast AI</p>
+        <h1>Dr. CureCast</h1>
+        <p>Your personal assistant</p>
       </Header>
 
       <MessageContainer>
@@ -225,7 +225,7 @@ const ChatAssistant: React.FC = () => {
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Describe your symptoms..."
+          placeholder="Type your message..."
           disabled={isLoading}
         />
         <VoiceButton
@@ -237,7 +237,7 @@ const ChatAssistant: React.FC = () => {
           🎤
         </VoiceButton>
         <SendButton type="submit" disabled={isLoading || !newMessage.trim()}>
-          {isLoading ? 'Analyzing...' : 'Send'}
+          {isLoading ? 'Processing...' : 'Send'}
         </SendButton>
       </InputContainer>
     </ChatContainer>

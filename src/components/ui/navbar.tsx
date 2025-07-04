@@ -3,16 +3,16 @@ import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, C
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface NavbarProps {
-  activePage: string;
-  onPageChange: (page: string) => void;
   isLoggedIn: boolean;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn }) => {
-  // Start with open sidebar on desktop, closed on mobile
-  const [isOpen, setIsOpen] = useState(false); // Always collapsed by default
+const Navbar: React.FC<NavbarProps> = ({ isLoggedIn }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -21,41 +21,34 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      // Always collapsed by default, even on desktop
       setIsOpen(false);
     };
     
-    // Set initial value
     handleResize();
-    
-    // Add event listener
     window.addEventListener('resize', handleResize);
-    
-    // Clean up
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Close sidebar when changing pages on mobile
-  const handlePageChange = (page: string) => {
-    onPageChange(page);
+  const handlePageChange = (path: string) => {
+    navigate(path);
     if (isMobile) {
       setIsOpen(false);
     }
   };
   
   const navItems = [
-    { id: 'founder', label: 'Founders', icon: Crown, requiresAuth: false, color: 'text-yellow-600 bg-yellow-100 border-2 border-yellow-400 font-bold' },
-    { id: 'dashboard', label: 'Home', icon: Home, requiresAuth: false, color: 'text-blue-600 bg-blue-100' },
-    { id: 'chat', label: 'Dr.CureCast', icon: MessageSquare, requiresAuth: true, color: 'text-emerald-600 bg-emerald-100' },
-    { id: 'voice', label: 'Voice', icon: Mic, requiresAuth: true, color: 'text-purple-600 bg-purple-100' },
-    { id: 'camera', label: 'Camera', icon: Camera, requiresAuth: true, color: 'text-amber-600 bg-amber-100' },
-    { id: 'health', label: 'Health Vault', icon: Shield, requiresAuth: true, color: 'text-indigo-600 bg-indigo-100' },
-    { id: 'profile', label: 'Profile', icon: User, requiresAuth: true, color: 'text-gray-600 bg-gray-100' },
+    { id: 'founder', path: '/founders', label: 'Founders', icon: Crown, requiresAuth: false, color: 'text-yellow-600 bg-yellow-100 border-2 border-yellow-400 font-bold' },
+    { id: 'dashboard', path: '/', label: 'Home', icon: Home, requiresAuth: false, color: 'text-blue-600 bg-blue-100' },
+    { id: 'chat', path: '/chat', label: 'Dr.CureCast', icon: MessageSquare, requiresAuth: true, color: 'text-emerald-600 bg-emerald-100' },
+    { id: 'voice', path: '/voice', label: 'Voice', icon: Mic, requiresAuth: true, color: 'text-purple-600 bg-purple-100' },
+    { id: 'camera', path: '/camera', label: 'Camera', icon: Camera, requiresAuth: true, color: 'text-amber-600 bg-amber-100' },
+    { id: 'health', path: '/health', label: 'Health Vault', icon: Shield, requiresAuth: true, color: 'text-indigo-600 bg-indigo-100' },
+    { id: 'profile', path: '/profile', label: 'Profile', icon: User, requiresAuth: true, color: 'text-gray-600 bg-gray-100' },
   ];
 
   return (
     <>
-      
       {/* Mobile Bottom Navigation - with animations and toggle button */}
       <motion.div 
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[90] md:hidden"
@@ -66,7 +59,7 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
         <div className="flex justify-around items-center py-2">
           {navItems
             .filter(item => !item.requiresAuth || isLoggedIn)
-            .slice(0, 4) // Limit to 4 items for mobile bottom nav to make room for menu button
+            .slice(0, 4)
             .map((item, index) => (
               <motion.div
                 key={item.id}
@@ -77,11 +70,11 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center py-2 px-1 ${activePage === item.id ? 'text-primary-600' : 'text-gray-600'}`}
-                  onClick={() => handlePageChange(item.id)}
+                  className={`flex flex-col items-center py-2 px-1 ${location.pathname === item.path ? 'text-primary-600' : 'text-gray-600'}`}
+                  onClick={() => handlePageChange(item.path)}
                 >
-                  <div className={`rounded-full p-1.5 mb-1 ${activePage === item.id ? item.color : 'bg-transparent'}`}>
-                    <item.icon className={`h-5 w-5 ${activePage === item.id ? '' : 'text-gray-500'}`} />
+                  <div className={`rounded-full p-1.5 mb-1 ${location.pathname === item.path ? item.color : 'bg-transparent'}`}>
+                    <item.icon className={`h-5 w-5 ${location.pathname === item.path ? '' : 'text-gray-500'}`} />
                   </div>
                   <span className="text-xs font-medium">{item.label}</span>
                 </Button>
@@ -131,7 +124,6 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
             <motion.div 
               className={cn(
                 "fixed bg-white border-r border-gray-200 shadow-lg z-[90]",
-                // Mobile sidebar (full screen when open)
                 isMobile ? "inset-0" : "top-16 left-0 bottom-0 w-64"
               )}
               initial={isMobile ? { opacity: 0 } : { x: -100, opacity: 0 }}
@@ -144,7 +136,6 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
                 {/* Sidebar header with toggle button for both mobile and desktop */}
                 <div className="flex items-center justify-between mb-6 border-b pb-4">
                   <div className="flex items-center gap-2 bg-primary-50 rounded-lg px-3 py-2 relative" style={{minWidth: '0'}}>
-                    {/* Vertical accent bar */}
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-600 rounded-l-lg" style={{minHeight: '100%'}} />
                     <Stethoscope className="h-6 w-6 text-primary-600 relative z-10" />
                     <h2 className="text-xl font-semibold text-primary-800 relative z-10" style={{letterSpacing: '0.01em'}}>CureCast</h2>
@@ -173,13 +164,13 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
                         transition={{ delay: index * 0.05 }}
                       >
                         <Button
-                          variant={activePage === item.id ? "default" : "ghost"}
+                          variant={location.pathname === item.path ? "default" : "ghost"}
                           size="sm"
-                          className={`flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg ${activePage === item.id ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
-                          onClick={() => handlePageChange(item.id)}
+                          className={`flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg ${location.pathname === item.path ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                          onClick={() => handlePageChange(item.path)}
                         >
-                          <div className={`rounded-full p-1.5 ${activePage === item.id ? 'bg-white bg-opacity-20' : item.color}`}>
-                            <item.icon className={`h-5 w-5 ${activePage === item.id ? 'text-white' : ''}`} />
+                          <div className={`rounded-full p-1.5 ${location.pathname === item.path ? 'bg-white bg-opacity-20' : item.color}`}>
+                            <item.icon className={`h-5 w-5 ${location.pathname === item.path ? 'text-white' : ''}`} />
                           </div>
                           <span className="font-medium">{item.label}</span>
                         </Button>
@@ -200,7 +191,7 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
                       variant="ghost"
                       size="sm"
                       className="flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg text-gray-600 hover:bg-gray-100"
-                      onClick={() => handlePageChange('settings')}
+                      onClick={() => handlePageChange('/settings')}
                     >
                       <div className="rounded-full p-1.5 text-gray-600 bg-gray-100">
                         <Settings className="h-5 w-5" />
@@ -248,26 +239,21 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: index * 0.05 }}
                   className="relative group"
-                  whileHover={{ scale: 1.05 }}
                 >
                   <Button
                     variant="ghost"
                     size="icon"
-                    className={`rounded-full p-2 ${activePage === item.id ? 'bg-primary-600' : 'hover:bg-gray-100'}`}
-                    onClick={() => handlePageChange(item.id)}
+                    onClick={() => handlePageChange(item.path)}
+                    className={`rounded-full ${location.pathname === item.path ? item.color : 'hover:bg-gray-100'}`}
+                    title={item.label}
                   >
-                    <item.icon className={`h-5 w-5 ${activePage === item.id ? 'text-white' : item.color.split(' ')[0]}`} />
+                    <item.icon className={`h-5 w-5 ${location.pathname === item.path ? '' : 'text-gray-500'}`} />
                   </Button>
                   
                   {/* Tooltip */}
                   <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
                     {item.label}
                   </div>
-                  
-                  {/* Active indicator */}
-                  {activePage === item.id && (
-                    <div className="absolute -left-1 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-primary-600 rounded-r-full" />
-                  )}
                 </motion.div>
               );
             })}

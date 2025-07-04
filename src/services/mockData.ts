@@ -1,4 +1,3 @@
-
 import { User, MedicalRecord, Reminder, Myth, AdminUser } from "../types";
 
 // Sample users data
@@ -226,6 +225,16 @@ export const translations = {
     english: "CureCast: Health Companion",
     hindi: "क्योरकास्ट: स्वास्थ्य साथी",
     telugu: "క్యూర్కాస్ట్: ఆరోగ్య సహచరుడు"
+  },
+  camera: {
+    english: "Camera",
+    hindi: "कैमरा",
+    telugu: "కెమెరా"
+  },
+  voice: {
+    english: "Voice",
+    hindi: "आवाज़",
+    telugu: "వాయిస్"
   },
   chatbot: {
     english: "Health Assistant",

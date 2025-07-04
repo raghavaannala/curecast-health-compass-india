@@ -3,6 +3,7 @@ import type { UserProfile } from '@/types/health';
 
 export interface UserContextType {
   user: UserProfile | null;
+  currentUser: UserProfile | null;
   setUser: (user: UserProfile | null) => void;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updateNotificationPreferences: (updates: Partial<UserProfile['notificationPreferences']>) => void;
@@ -30,6 +31,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <UserContext.Provider value={{
       user,
+      currentUser: user,
       setUser,
       updateProfile,
       updateNotificationPreferences,

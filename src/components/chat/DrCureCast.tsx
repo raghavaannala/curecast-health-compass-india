@@ -98,11 +98,11 @@ interface ChatMessage {
 const getInitialGreeting = (language: string) => {
   switch (language) {
     case 'hindi':
-      return 'नमस्ते! मैं डॉ. क्योरकास्ट हूं। मैं आपकी स्वास्थ्य संबंधी चिंताओं में मदद कर सकता हूं। कृपया मुझे बताएं कि आप कैसा महसूस कर रहे हैं?';
+      return 'नमस्ते! मैं डॉ. क्योरकास्ट हूं। आपसे बात करके खुशी हो रही है। मैं आपकी किस प्रकार सहायता कर सकता हूं?';
     case 'telugu':
-      return 'నమస్కారం! నేను డాక్టర్ క్యూర్కాస్ట్. నేను మీ ఆరోగ్య సమస్యలలో సహాయం చేయగలను. దయచేసి మీరు ఎలా అనుభవిస్తున్నారో నాకు చెప్పండి?';
+      return 'నమస్కారం! నేను డాక్టర్ క్యూర్కాస్ట్. మిమ్మల్ని కలవడం చాలా సంతోషంగా ఉంది. నేను మీకు ఎలా సహాయపడగలను?';
     default:
-      return "Hello! I'm Dr. CureCast. How can I help you with your health concerns today?";
+      return "Hello! I'm Dr. CureCast. It's nice to meet you. How can I help you today?";
   }
 };
 
@@ -127,7 +127,7 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      text: "Hello! I'm Dr. CureCast. How can I help you with your health concerns today?",
+      text: "Hello! I'm Dr. CureCast. It's nice to meet you. How can I help you today?",
       isUser: false,
     },
   ]);
@@ -444,20 +444,20 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
   // Detect simple greetings and return appropriate responses
   const isSimpleGreeting = (text: string): string | null => {
     const greetings = {
-      'hi': "Hello there! How can I assist with your health concerns today?",
-      'hello': "Hello! How can I help you with your health today?",
-      'hey': "Hello! What health concerns can I address for you today?",
-      'hii': "Hello! How may I assist you with your health concerns?",
-      'hiii': "Hello! How may I assist you with your health concerns?",
-      'hiiii': "Hello! How may I assist you with your health concerns?",
-      'helo': "Hello! How can I help you with your health today?",
-      'hellow': "Hello! How can I help you with your health today?",
-      'hola': "Hello! How can I help you with your health today?",
-      'namaste': "Namaste! How can I assist with your health concerns today?",
-      'good morning': "Good morning! How can I help you with your health today?",
-      'good afternoon': "Good afternoon! How can I help you with your health today?",
-      'good evening': "Good evening! How can I help you with your health today?",
-      'how are you': "I'm well, thank you for asking. More importantly, how are you feeling today? Any health concerns I can help with?"
+      'hi': "Hello there! How are you doing today?",
+      'hello': "Hello! It's nice to connect with you. How can I help?",
+      'hey': "Hey there! How can I assist you today?",
+      'hii': "Hi! How are you doing today?",
+      'hiii': "Hello there! How can I assist you today?",
+      'hiiii': "Hi! How are you doing? What can I help you with?",
+      'helo': "Hello! How are you today?",
+      'hellow': "Hello! How are you doing?",
+      'hola': "¡Hola! How can I help you today?",
+      'namaste': "Namaste! It's nice to meet you. How can I help?",
+      'good morning': "Good morning! I hope your day is off to a great start. What can I do for you?",
+      'good afternoon': "Good afternoon! How's your day going? How can I assist you?",
+      'good evening': "Good evening! How has your day been? What can I help you with?",
+      'how are you': "I'm doing well, thank you for asking! How are you today?"
     };
 
     // Check if input matches any greeting
@@ -669,7 +669,7 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
     };
 
     // Special case for greeting message
-    const isGreeting = message.text === "Hello! I'm Dr. CureCast. How can I help you with your health concerns today?";
+    const isGreeting = message.text === "Hello! I'm Dr. CureCast. It's nice to meet you. How can I help you today?";
 
     // Process the message for highlights
     const {

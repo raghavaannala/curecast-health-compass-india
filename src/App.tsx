@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import HealthFactsPage from '@/components/health/HealthFactsPage';
 import FoundersPage from '@/components/founder/FoundersPage';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 
 const HEALTH_FACTS = [
   {
@@ -65,16 +66,16 @@ const App: React.FC = () => {
   const { toast } = useToast();
   const { user } = useUser ? useUser() : { user: null };
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activePage, setActivePage] = useState('dashboard');
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [requestedFeature, setRequestedFeature] = useState<string | null>(null);
   const [showVoiceInterface, setShowVoiceInterface] = useState(false);
   const [showCameraInterface, setShowCameraInterface] = useState(false);
   const [voiceInput, setVoiceInput] = useState<string | null>(null);
   const [cameraInput, setCameraInput] = useState<{imageUrl: string, description: string} | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Function to clear auth errors after a delay
   const clearAuthError = () => {
@@ -126,7 +127,7 @@ const App: React.FC = () => {
     
     // If there was a requested feature, navigate to it after login
     if (requestedFeature) {
-      setActivePage(requestedFeature);
+      navigate(requestedFeature);
       setRequestedFeature(null);
     }
   };
@@ -139,8 +140,8 @@ const App: React.FC = () => {
       localStorage.clear();
       sessionStorage.clear();
       setIsLoggedIn(false);
-      setActivePage('dashboard');
       await auth.signOut();
+      navigate('/');
       window.location.reload();
     } catch (error) {
       console.error("Error during logout:", error);
@@ -150,12 +151,12 @@ const App: React.FC = () => {
   };
 
   // Handle feature access
-  const handleFeatureAccess = (featurePage: string) => {
-    if (['chat', 'profile', 'health', 'voice', 'camera', 'education'].includes(featurePage) && !isLoggedIn) {
-      setRequestedFeature(featurePage);
+  const handleFeatureAccess = (path: string) => {
+    if (['/chat', '/profile', '/health', '/voice', '/camera', '/education'].includes(path) && !isLoggedIn) {
+      setRequestedFeature(path);
       setShowLoginModal(true);
     } else {
-      setActivePage(featurePage);
+      navigate(path);
     }
   };
 
@@ -164,8 +165,8 @@ const App: React.FC = () => {
     setVoiceInput(transcript);
     
     // If in standalone mode, don't navigate away
-    if (activePage !== 'voice') {
-      setActivePage('chat');
+    if (location.pathname !== '/voice') {
+      navigate('/chat');
     }
     
     setShowVoiceInterface(false);
@@ -176,8 +177,8 @@ const App: React.FC = () => {
     setCameraInput({ imageUrl, description });
     
     // If in standalone mode, don't navigate away
-    if (activePage !== 'camera') {
-      setActivePage('chat');
+    if (location.pathname !== '/camera') {
+      navigate('/chat');
     }
     
     setShowCameraInterface(false);
@@ -188,9 +189,14 @@ const App: React.FC = () => {
     setShowVoiceInterface(true);
   };
 
-  // Open camera interface modal
+  // Modify openCameraInterface to use navigation
   const openCameraInterface = () => {
-    setShowCameraInterface(true);
+    if (!isLoggedIn) {
+      setRequestedFeature('camera');
+      setShowLoginModal(true);
+      return;
+    }
+    navigate('/camera');
   };
 
   // Clean up voice and camera inputs when component unmounts
@@ -257,7 +263,7 @@ const App: React.FC = () => {
                   <h3 className="text-2xl font-bold text-white mb-4">Dr. CureCast AI</h3>
                   <p className="text-white/80 mb-6">Get instant health guidance and expert advice for your concerns</p>
                   <button 
-                    onClick={() => handleFeatureAccess('chat')}
+                    onClick={() => handleFeatureAccess('/chat')}
                     className="px-6 py-3 bg-white text-primary-600 rounded-xl hover:bg-primary-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
                   >
                     Chat Now
@@ -332,7 +338,7 @@ const App: React.FC = () => {
                   <h3 className="text-2xl font-bold text-gray-800 mb-4">Health Vault</h3>
                   <p className="text-gray-600 mb-6">Securely store and access your health records anytime, anywhere</p>
                   <button 
-                    onClick={() => handleFeatureAccess('health')}
+                    onClick={() => handleFeatureAccess('/health')}
                     className="mt-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-colors duration-200 flex items-center gap-2 font-medium shadow-md"
                   >
                     Access Vault
@@ -353,7 +359,7 @@ const App: React.FC = () => {
                   <h3 className="text-2xl font-bold text-gray-800 mb-4">Health Education</h3>
                   <p className="text-gray-600 mb-6">Learn about common health conditions with expert insights</p>
                   <button 
-                    onClick={() => handleFeatureAccess('education')}
+                    onClick={() => handleFeatureAccess('/education')}
                     className="mt-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-colors duration-200 flex items-center gap-2 font-medium shadow-md"
                   >
                     Learn Facts
@@ -427,7 +433,7 @@ const App: React.FC = () => {
         
         {/* Know the Founder Card - Elevated Design */}
         <div 
-          onClick={() => handleFeatureAccess('founder')} 
+          onClick={() => handleFeatureAccess('/founders')} 
           className="relative overflow-hidden rounded-3xl cursor-pointer transform transition-all duration-300 hover:scale-[1.02]"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500"></div>
@@ -496,18 +502,15 @@ const App: React.FC = () => {
               </div>
             )}
             <div className="hidden md:block text-right">
-              <span className="text-xs text-white/70 block">Developed with ❤️ by</span>
+              <span className="text-xs text-white/70 block">Developed by</span>
               <span className="text-sm text-white font-medium">Raghava Annala</span>
             </div>
           </div>
         </div>
       </header>
+
       {/* Navbar component */}
-      <Navbar 
-        activePage={activePage} 
-        onPageChange={setActivePage} 
-        isLoggedIn={isLoggedIn} 
-      />
+      <Navbar isLoggedIn={isLoggedIn} />
       
       {/* Login Modal */}
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
@@ -580,42 +583,23 @@ const App: React.FC = () => {
       
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8 md:pl-72 pt-20">
-        {activePage === 'dashboard' && renderDashboard()}
-        {isLoggedIn && activePage === 'profile' && <ProfilePage />}
-        {isLoggedIn && activePage === 'chat' && (
-          <DrCureCast 
-            onVoiceInputRequest={openVoiceInterface} 
-            onCameraInputRequest={openCameraInterface}
-            voiceInput={voiceInput}
-            cameraInput={cameraInput}
-            onVoiceInputProcessed={() => setVoiceInput(null)}
-            onCameraInputProcessed={() => setCameraInput(null)}
-          />
-        )}
-        {isLoggedIn && activePage === 'health' && <HealthVault />}
-        {isLoggedIn && activePage === 'voice' && (
-          <VoiceInterface 
-            standalone={true} 
-            onTranscriptReady={handleVoiceInput} 
-          />
-        )}
-        {isLoggedIn && activePage === 'camera' && (
-          <CameraDiagnostics 
-            standalone={true} 
-            onImageCaptured={handleCameraInput} 
-          />
-        )}
-        {activePage === 'founder' && <FoundersPage />}
-        {activePage === 'education' && <HealthFactsPage />}
-        {!isLoggedIn && activePage !== 'dashboard' && (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold mb-4">Sign in Required</h2>
-            <p className="text-gray-600 mb-6">Please sign in to access this feature.</p>
-            <Button onClick={() => setShowLoginModal(true)} className="bg-primary-600 hover:bg-primary-700">
-              Sign In Now
-            </Button>
-          </div>
-        )}
+        <Routes>
+          <Route path="/" element={renderDashboard()} />
+          <Route path="/chat" element={
+            <DrCureCast 
+              voiceInput={voiceInput} 
+              cameraInput={cameraInput} 
+              onVoiceInputRequest={() => setShowVoiceInterface(true)}
+              onCameraInputRequest={() => setShowCameraInterface(true)}
+            />
+          } />
+          <Route path="/profile" element={isLoggedIn ? <ProfilePage /> : <Navigate to="/" />} />
+          <Route path="/health" element={isLoggedIn ? <HealthVault /> : <Navigate to="/" />} />
+          <Route path="/camera" element={isLoggedIn ? <CameraDiagnostics standalone={true} onImageCaptured={handleCameraInput} /> : <Navigate to="/" />} />
+          <Route path="/voice" element={isLoggedIn ? <VoiceInterface standalone={true} onTranscriptReady={handleVoiceInput} /> : <Navigate to="/" />} />
+          <Route path="/education" element={<HealthFactsPage />} />
+          <Route path="/founders" element={<FoundersPage />} />
+        </Routes>
       </main>
     </div>
   );
