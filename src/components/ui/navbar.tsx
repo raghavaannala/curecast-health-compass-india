@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, ChevronLeft, ChevronRight, Settings, LogOut } from 'lucide-react';
+import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, ChevronLeft, ChevronRight, Settings, LogOut, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,6 +44,7 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, onPageChange, isLoggedIn })
   };
   
   const navItems = [
+    { id: 'founder', label: 'Founders', icon: Crown, requiresAuth: false, color: 'text-yellow-600 bg-yellow-100 border-2 border-yellow-400 font-bold' },
     { id: 'dashboard', label: 'Home', icon: Home, requiresAuth: false, color: 'text-blue-600 bg-blue-100' },
     { id: 'chat', label: 'Dr.CureCast', icon: MessageSquare, requiresAuth: true, color: 'text-emerald-600 bg-emerald-100' },
     { id: 'voice', label: 'Voice', icon: Mic, requiresAuth: true, color: 'text-purple-600 bg-purple-100' },

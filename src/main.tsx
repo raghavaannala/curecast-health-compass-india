@@ -25,10 +25,10 @@ if (!rootElement) throw new Error('Root element not found');
 createRoot(rootElement).render(
   <React.StrictMode>
     <UserProvider>
-      <LanguageProvider>
-        <App />
-        <Toaster />
-      </LanguageProvider>
+    <LanguageProvider>
+      <App />
+      <Toaster />
+    </LanguageProvider>
     </UserProvider>
   </React.StrictMode>
 );

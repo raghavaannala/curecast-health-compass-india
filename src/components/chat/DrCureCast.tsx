@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY, API_CONFIG } from '@/config/api';
-import { Stethoscope, Loader2, Send, AlertTriangle, Info, ChevronDown, User, Bot, Heart, Wind, Pill, Phone, Clock, Mic, Camera } from 'lucide-react';
+import { Stethoscope, Loader2, Send, AlertTriangle, Info as InfoIcon, ChevronDown, User, Bot, Heart, Wind, Pill, Phone, Clock, Mic, Camera, Eye, BadgeCheck, CheckCircle2, Clipboard, Zap, Thermometer, ArrowDownRight, ArrowUpRight, AlertCircle, ClipboardCheck, CircleDot, ClipboardList, PillIcon, Globe, Activity, LightbulbIcon, Sparkles, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useToast } from '@/components/ui/use-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChatContainer,
   Header,
@@ -16,8 +17,16 @@ import {
   InputContainer,
   SeverityIndicator,
   Recommendation,
-  TypingIndicator
+  TypingIndicator,
+  SectionHighlight,
+  ImagePreview,
+  MessageTime,
+  ChipsContainer,
+  CategorySection,
+  mediaQueries
 } from '@/styles/ChatStyles';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 // Enhanced symptom-disease mapping with photo requirements
 const SYMPTOM_RULES = {
@@ -93,7 +102,7 @@ const getInitialGreeting = (language: string) => {
     case 'telugu':
       return 'నమస్కారం! నేను డాక్టర్ క్యూర్కాస్ట్. నేను మీ ఆరోగ్య సమస్యలలో సహాయం చేయగలను. దయచేసి మీరు ఎలా అనుభవిస్తున్నారో నాకు చెప్పండి?';
     default:
-      return "Good day, I'm Dr. CureCast. I'm a qualified medical professional here to assist with your health concerns. Please describe your symptoms, and I'll provide a medical assessment.";
+      return "Hello! I'm Dr. CureCast. How can I help you with your health concerns today?";
   }
 };
 
@@ -113,24 +122,35 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
   cameraInput,
   onVoiceInputProcessed,
   onCameraInputProcessed
- }) => {
+}) => {
   const { currentLanguage } = useLanguage();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { 
-      text: getInitialGreeting(currentLanguage), 
-      isUser: false 
-    }
+    {
+      text: "Hello! I'm Dr. CureCast. How can I help you with your health concerns today?",
+      isUser: false,
+    },
   ]);
   const [input, setInput] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageData, setImageData] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({});
+  const [quickChips, setQuickChips] = useState([
+    "I have a headache",
+    "Stomach pain",
+    "Fever and cough",
+    "Skin rash",
+    "Help me with medication"
+  ]);
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    scrollToBottom();
   }, [messages]);
   
   // Process voice input when it changes
@@ -347,21 +367,28 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
       }
 
       // Then get detailed response from Gemini
-      const prompt = `You are Dr.CureCast, a professional medical physician with extensive experience. ${promptPrefix}A patient has described their symptoms as: "${promptInput}". ${promptSuffix}
+      const prompt = `You are Dr.CureCast, a warm, compassionate physician with extensive experience who speaks in a conversational, approachable manner. ${promptPrefix}A patient has described their symptoms as: "${promptInput}". ${promptSuffix}
       
-      Please provide a concise, professional medical response in ${currentLanguage} using clear but medically appropriate language. Remember that you are a qualified doctor and should respond with the authority and professionalism expected of a medical professional.
+      Please provide a friendly, conversational medical response in ${currentLanguage} that feels like talking to a trusted family doctor, not an AI.
       
-      Structure your response with these EXACT sections in this EXACT order:
-      Initial assessment: Provide a brief professional assessment
-      Possible causes: List potential diagnoses (use professional medical terms where appropriate)
-      Immediate care advice: Provide evidence-based recommendations for home care
-      When to seek medical attention: Clear clinical indicators that warrant professional medical attention
+      Structure your response with these sections, but make them sound natural and conversational:
       
-      Keep your language professional and appropriate for a doctor-patient consultation. Maintain a calm, authoritative, and reassuring tone throughout.
-      Do NOT use asterisks (*), numbers (1., 2.), bullet points, or any special formatting in your response.
-      Each section MUST be clearly labeled with the exact section names provided above.
+      Initial assessment: Provide a brief, personalized assessment that acknowledges the patient's concerns
+      Possible causes: Explain potential causes in an easy-to-understand way, using clear language with medical terms explained when needed
+      Immediate care advice: Offer practical, helpful recommendations with a caring tone
+      When to seek medical attention: Explain warning signs that need professional attention without causing unnecessary alarm
       
-      If the input is in Hindi or Telugu, respond in that same language. Otherwise respond in English.`;
+      ADDITIONALLY, if medications are appropriate, include this section:
+      Medications: Suggest options in a helpful, informative way
+      
+      ADDITIONALLY, if symptoms need clarification, include this section:
+      Symptoms: Discuss relevant symptoms to watch for in a conversational way
+      
+      Use a warm, empathetic tone throughout. Speak directly to the patient using "you" and occasionally add phrases like "I understand this must be uncomfortable" or "Many of my patients experience this" to sound more human and empathetic.
+      
+      Each section should be clearly labeled but feel like natural parts of a conversation with a caring doctor.
+      
+      If the input is in Hindi or Telugu, respond in that same language with the same warm, conversational approach.`;
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -487,225 +514,501 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
     }
   };
 
-  const renderMessageContent = (message: ChatMessage) => {
-    if (message.isUser) {
-      return <p className="text-gray-800">{message.text}</p>;
-    }
+  // Enhanced process message function to extract medical information from AI responses
+  const processMessage = (text: string): {
+    mainText: string;
+    highlightedCondition?: string;
+    consequences?: string;
+    advice?: string;
+    detection?: string;
+    medications?: string[];
+    dosages?: {name: string, dosage: string, frequency: string}[];
+    symptoms?: string[];
+    urgency?: 'low' | 'medium' | 'high';
+    treatmentPlan?: string;
+    websites?: string[];
+    medicalState?: string;
+  } => {
+    // Store the original text as the main text
+    const mainText = text;
+    
+    // Initialize all extraction variables
+    let highlightedCondition = '';
+    let consequences = '';
+    let advice = '';
+    let detection = '';
+    let medications: string[] = [];
+    let dosages: {name: string, dosage: string, frequency: string}[] = [];
+    let symptoms: string[] = [];
+    let urgency: 'low' | 'medium' | 'high' = 'medium';
+    let treatmentPlan = '';
+    let websites: string[] = [];
+    let medicalState = '';
 
-    // For AI responses
-    if (message.sections && Object.keys(message.sections).length > 0) {
+    // Extract the assessment section (Initial assessment)
+    const assessmentRegex = /(?:Initial assessment|Assessment):?\s*(.*?)(?=(?:Possible causes|Causes|Immediate care|When to seek|Medications|Symptoms|$))/is;
+    const assessmentMatch = text.match(assessmentRegex);
+    if (assessmentMatch && assessmentMatch[1]) {
+      detection = assessmentMatch[1].trim();
+    }
+    
+    // Extract the possible causes section
+    const causesRegex = /(?:Possible causes|Causes):?\s*(.*?)(?=(?:Immediate care|Care advice|When to seek|Medications|Symptoms|$))/is;
+    const causesMatch = text.match(causesRegex);
+    if (causesMatch && causesMatch[1]) {
+      consequences = causesMatch[1].trim();
+    }
+    
+    // Extract the immediate care advice section
+    const careAdviceRegex = /(?:Immediate care advice|Care advice|Home care):?\s*(.*?)(?=(?:When to seek|Medical attention|Medications|Symptoms|$))/is;
+    const careAdviceMatch = text.match(careAdviceRegex);
+    if (careAdviceMatch && careAdviceMatch[1]) {
+      advice = careAdviceMatch[1].trim();
+      treatmentPlan = careAdviceMatch[1].trim();
+    }
+    
+    // Extract when to seek medical attention section
+    const whenToSeekRegex = /(?:When to seek medical attention|Medical attention|Seek help):?\s*(.*?)(?=(?:Initial assessment|Assessment|Possible causes|Causes|Immediate care|Care advice|Medications|Symptoms|$))/is;
+    const whenToSeekMatch = text.match(whenToSeekRegex);
+    if (whenToSeekMatch && whenToSeekMatch[1]) {
+      medicalState = whenToSeekMatch[1].trim();
+    }
+    
+    // Extract medications from standard format
+    const medicationsRegex = /(?:Medications):?\s*(.*?)(?=(?:Initial assessment|Assessment|Possible causes|Causes|Immediate care|Care advice|When to seek|Medical attention|Symptoms|$))/is;
+    const medicationsMatch = text.match(medicationsRegex);
+    if (medicationsMatch && medicationsMatch[1]) {
+      const medsText = medicationsMatch[1].trim();
+      medications = medsText
+        .split(/\n|,|;/)
+        .map(med => med.trim())
+        .filter(med => med.length > 0 && !med.toLowerCase().includes('section') && !med.toLowerCase().includes('medications'));
+    }
+    
+    // Extract symptoms from standard format
+    const symptomsStandardRegex = /(?:Symptoms):?\s*(.*?)(?=(?:Initial assessment|Assessment|Possible causes|Causes|Immediate care|Care advice|When to seek|Medical attention|Medications|$))/is;
+    const symptomsStandardMatch = text.match(symptomsStandardRegex);
+    if (symptomsStandardMatch && symptomsStandardMatch[1]) {
+      const symptomsText = symptomsStandardMatch[1].trim();
+      const extractedSymptoms = symptomsText
+        .split(/\n|,|;/)
+        .map(symptom => symptom.trim())
+        .filter(symptom => symptom.length > 0 && !symptom.toLowerCase().includes('section') && !symptom.toLowerCase().includes('symptoms'));
+      
+      symptoms = extractedSymptoms;
+    }
+    
+    // If no medications found through standard format, try finding common medication names in the text
+    if (medications.length === 0) {
+      const commonMeds = [
+        'acetaminophen', 'ibuprofen', 'aspirin', 'paracetamol', 'tylenol', 'advil', 'motrin',
+        'antacid', 'tums', 'pepcid', 'omeprazole', 'famotidine', 'ranitidine'
+      ];
+      
+      const medRegex = new RegExp(`\\b(${commonMeds.join('|')})\\b`, 'gi');
+      const medMatches = [...text.matchAll(medRegex)];
+      
+      if (medMatches.length > 0) {
+        const uniqueMeds = Array.from(new Set(medMatches.map(match => match[0])));
+        medications = uniqueMeds.map(med => med.charAt(0).toUpperCase() + med.slice(1).toLowerCase());
+      }
+    }
+    
+    // If no symptoms found through standard format, try to extract common symptoms from the text
+    if (symptoms.length === 0) {
+      const possibleSymptoms = [
+        'headache', 'pain', 'fever', 'cough', 'rash', 'nausea', 'vomiting', 
+        'diarrhea', 'fatigue', 'dizziness', 'weakness', 'sore throat'
+      ];
+      
+      const foundSymptoms = new Set<string>();
+      possibleSymptoms.forEach(symptom => {
+        const symptomRegex = new RegExp(`\\b${symptom}\\b`, 'i');
+        if (symptomRegex.test(text)) {
+          foundSymptoms.add(symptom);
+        }
+      });
+      
+      symptoms = Array.from(foundSymptoms);
+    }
+    
+    // Extract urgency level
+    if (text.toLowerCase().includes('emergency') || 
+        text.toLowerCase().includes('urgent') || 
+        text.toLowerCase().includes('immediately') || 
+        text.toLowerCase().includes('severe') || 
+        text.toLowerCase().includes('critical')) {
+      urgency = 'high';
+    } else if (text.toLowerCase().includes('mild') && 
+              !text.toLowerCase().includes('seek medical attention') && 
+              !text.toLowerCase().includes('consult a doctor')) {
+      urgency = 'low';
+    }
+    
+    return {
+      mainText,
+      highlightedCondition,
+      consequences,
+      advice,
+      detection,
+      medications,
+      dosages,
+      symptoms,
+      urgency,
+      treatmentPlan,
+      websites,
+      medicalState
+    };
+  };
+
+  // Update the renderMessageContent function to display organized medical sections
+  const renderMessageContent = (message: ChatMessage) => {
+    // Format current time for message bubbles
+    const formatTime = (date = new Date()) => {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    // Special case for greeting message
+    const isGreeting = message.text === "Hello! I'm Dr. CureCast. How can I help you with your health concerns today?";
+
+    // Process the message for highlights
+    const {
+      mainText,
+      highlightedCondition,
+      consequences,
+      advice,
+      detection,
+      medications,
+      dosages,
+      symptoms,
+      urgency,
+      treatmentPlan,
+      websites,
+      medicalState
+    } = message.isUser ? { mainText: message.text } : processMessage(message.text);
+      
+    if (message.isUser) {
       return (
-        <div className="space-y-4">
-          {!message.sections.assessment && !message.sections.causes && !message.sections.careAdvice && !message.sections.whenToSeekHelp && (
-            <p className="text-gray-800">{message.text}</p>
-          )}
-          
-          {message.sections.assessment && (
-            <div className="rounded-lg bg-blue-50 p-3 border border-blue-100">
-              <div className="flex items-center gap-2 font-medium text-blue-700 mb-2">
-                <Stethoscope size={18} />
-                <h4>Assessment</h4>
-              </div>
-              <p className="text-gray-800">{message.sections.assessment}</p>
-            </div>
-          )}
-          
-          {message.sections.causes && (
-            <div className="rounded-lg bg-purple-50 p-3 border border-purple-100">
-              <div className="flex items-center gap-2 font-medium text-purple-700 mb-2">
-                <Info size={18} />
-                <h4>Possible Causes</h4>
-              </div>
-              <p className="text-gray-800">{message.sections.causes}</p>
-            </div>
-          )}
-          
-          {message.sections.careAdvice && (
-            <div className="rounded-lg bg-green-50 p-3 border border-green-100">
-              <div className="flex items-center gap-2 font-medium text-green-700 mb-2">
-                <Heart size={18} />
-                <h4>Care Advice</h4>
-              </div>
-              <p className="text-gray-800">{message.sections.careAdvice}</p>
-            </div>
-          )}
-          
-          {message.sections.whenToSeekHelp && (
-            <div className="rounded-lg bg-amber-50 p-3 border border-amber-100">
-              <div className="flex items-center gap-2 font-medium text-amber-700 mb-2">
-                <AlertTriangle size={18} />
-                <h4>When to Seek Medical Help</h4>
-              </div>
-              <p className="text-gray-800">{message.sections.whenToSeekHelp}</p>
-            </div>
-          )}
+        <div className="flex items-start gap-3 py-4">
+          <Avatar>
+            <AvatarImage src="/user-avatar.png" alt="User" />
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
+          <div className="text-sm">
+            {message.text}
+          </div>
         </div>
       );
     }
+    
+    // Check if we have structured sections
+    const hasStructuredSections = detection || consequences || advice || 
+                                 (medications && medications.length > 0) || 
+                                 (symptoms && symptoms.length > 0) || 
+                                 treatmentPlan || medicalState;
 
-    return <p className="text-gray-800">{message.text}</p>;
-  };
+    return (
+      <div className="flex items-start gap-3 py-4">
+        <Avatar>
+          <AvatarImage src="/doctor-avatar.png" alt="Dr. CureCast" />
+          <AvatarFallback>Dr</AvatarFallback>
+        </Avatar>
+        <div className="text-sm flex-1 space-y-4 max-w-full">
+          {/* Only show mainText if we don't have structured sections */}
+          {mainText && !hasStructuredSections && (
+            <div>
+              {mainText}
+            </div>
+          )}
+          
+          {(highlightedCondition || detection) && (
+            <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-400 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-blue-700 mb-2">
+                <ClipboardList size={18} className="text-blue-600" />
+                Assessment
+              </div>
+              <div className="text-gray-700 leading-relaxed">
+                {detection || highlightedCondition}
+              </div>
+            </div>
+          )}
 
-  return (
-    <div id="dr-curecast-component" className="flex flex-col h-[calc(100vh-12rem)] max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-4 p-4 bg-gradient-to-r from-primary-100 to-secondary-100 rounded-xl shadow-sm">
-        <div className="p-2 rounded-full bg-white/90 shadow-sm">
-          <Stethoscope className="h-7 w-7 text-primary-600" />
-        </div>
-        <div>
-          <h2 className="font-display font-bold text-xl text-gray-800">Dr.CureCast</h2>
-          <p className="text-sm text-gray-600">Board-certified Medical Physician</p>
+          {consequences && (
+            <div className="bg-pink-50 rounded-lg p-4 border-l-4 border-pink-400 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-pink-700 mb-2">
+                <AlertCircle size={18} className="text-pink-600" />
+                Possible Causes
+              </div>
+              <div className="text-gray-700 leading-relaxed">
+                {consequences}
+              </div>
+            </div>
+          )}
+
+          {symptoms && symptoms.length > 0 && (
+            <div className="bg-sky-50 rounded-lg p-4 border-l-4 border-sky-400 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-sky-700 mb-2">
+                <Thermometer size={18} className="text-sky-600" />
+                Symptoms
+              </div>
+              <div className="text-gray-700">
+                <ul className="space-y-2">
+                  {symptoms.map((symptom, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <CircleDot size={12} className="mt-1.5 text-sky-600" />
+                      <span className="leading-relaxed">{symptom}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {(treatmentPlan || advice) && (
+            <div className="bg-green-50 rounded-lg p-4 border-l-4 border-green-400 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-green-700 mb-2">
+                <Clipboard size={18} className="text-green-600" />
+                Treatment Plan
+              </div>
+              <div className="text-gray-700 leading-relaxed">
+                {treatmentPlan || advice}
+              </div>
+            </div>
+          )}
+
+          {medications && medications.length > 0 && (
+            <div className="bg-emerald-50 rounded-lg p-4 border-l-4 border-emerald-400 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-emerald-700 mb-2">
+                <PillIcon size={18} className="text-emerald-600" />
+                Medications
+              </div>
+              <div className="text-gray-700">
+                <ul className="space-y-2">
+                  {medications.map((medication, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <CircleDot size={12} className="mt-1.5 text-emerald-600" />
+                      <span className="leading-relaxed">{medication}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                {dosages && dosages.length > 0 && (
+                  <div className="mt-3 border-t border-emerald-200 pt-2">
+                    <p className="font-medium text-sm text-emerald-700 mb-2">Dosage Instructions:</p>
+                    <ul className="space-y-2">
+                      {dosages.map((dosage, i) => (
+                        <li key={i} className="leading-relaxed">
+                          <span className="font-medium">{dosage.name}:</span> {dosage.dosage}, {dosage.frequency}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {advice && !treatmentPlan && (
+            <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-amber-400 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-amber-700 mb-2">
+                <LightbulbIcon size={18} className="text-amber-500" />
+                Recommendations
+              </div>
+              <div className="text-gray-700 leading-relaxed">
+                {advice}
+              </div>
+            </div>
+          )}
+
+          {websites && websites.length > 0 && (
+            <div className="bg-indigo-50 rounded-lg p-4 border-l-4 border-indigo-400 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-indigo-700 mb-2">
+                <Globe size={18} className="text-indigo-600" />
+                Helpful Resources
+              </div>
+              <div className="text-gray-700">
+                <ul className="space-y-2">
+                  {websites.map((website, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <CircleDot size={12} className="mt-1.5 text-indigo-600" />
+                      <a 
+                        href={website.startsWith('http') ? website : `https://${website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-indigo-600 hover:underline leading-relaxed"
+                      >
+                        {website}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {medicalState && (
+            <div className="bg-amber-50 rounded-lg p-4 border-l-4 border-amber-400 shadow-sm">
+              <div className="flex items-center gap-2 font-medium text-amber-700 mb-2">
+                <Activity size={18} className="text-amber-600" />
+                When to Seek Medical Attention
+              </div>
+              <div className="text-gray-700 leading-relaxed">
+                {medicalState}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+    );
+  };
 
-      <Card className="flex-1 overflow-hidden flex flex-col shadow-lg border-gray-200">
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          <div className="space-y-6">
-            {messages.map((msg, index) => (
-              <div key={index} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}>
-                <div className={`flex gap-3 max-w-[80%] ${msg.isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.isUser ? 'bg-blue-100' : 'bg-green-100'}`}>
-                    {msg.isUser ? (
-                      msg.sourceType === 'voice' ? <Mic className="h-5 w-5" /> : 
-                      msg.sourceType === 'camera' ? <Camera className="h-5 w-5" /> : 
-                      <User className="h-5 w-5" />
-                    ) : (
-                      <Bot className="h-5 w-5" />
-                    )}
-                  </div>
-                  
-                  <div>
-                    <div className={`rounded-2xl px-4 py-3 ${
-                      msg.isUser 
-                        ? 'bg-blue-50 border border-blue-100 text-gray-800 rounded-tr-none' 
-                        : 'bg-white border border-gray-200 shadow-sm text-gray-800 rounded-tl-none'
-                    }`}>
-                      {renderMessageContent(msg)}
-                    </div>
+  // Toggle section expansion
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
 
-                    {!msg.isUser && msg.severity && (
-                      <div className={`mt-2 inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${getSeverityColor(msg.severity)}`}>
-                        {msg.severity === 'high' ? (
-                          <AlertTriangle size={12} className="text-red-600" />
-                        ) : msg.severity === 'medium' ? (
-                          <Wind size={12} className="text-yellow-600" />
-                        ) : (
-                          <Info size={12} className="text-green-600" />
-                        )}
-                        {msg.severity === 'high' 
-                          ? 'Urgent attention needed'
-                          : msg.severity === 'medium'
-                          ? 'Medical advice recommended'
-                          : 'Minor concern'
-                        }
-                      </div>
-                    )}
-                    
-                    {!msg.isUser && msg.recommendation && (
-                      <div className={`mt-2 p-2 rounded-lg text-sm ${getRecommendationColor(msg.recommendation.action)}`}>
-                        <div className="flex items-center gap-2 mb-1">
-                          {msg.recommendation.action === 'emergency' ? (
-                            <Phone size={14} className="text-red-600" />
-                          ) : msg.recommendation.action === 'visit clinic' ? (
-                            <Clock size={14} className="text-yellow-600" />
-                          ) : (
-                            <Pill size={14} className="text-green-600" />
-                          )}
-                          <span className="font-medium">
-                            {msg.recommendation.action === 'emergency' 
-                              ? 'Seek immediate help'
-                              : msg.recommendation.action === 'visit clinic'
-                              ? 'Visit a healthcare provider'
-                              : 'Self-care advice'
-                            }
-                          </span>
-                        </div>
-                        <p className="ml-6 text-gray-700">{msg.recommendation.text}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {isProcessing && (
-              <div className="flex justify-start animate-fade-in">
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-green-100">
-                    <Bot size={16} className="text-green-600" />
-                  </div>
-                  <div className="rounded-2xl px-4 py-3 bg-white border border-gray-200 shadow-sm rounded-tl-none">
-                    <div className="flex space-x-2 p-2">
-                      <div className="h-2 w-2 rounded-full bg-gray-400 animate-pulse"></div>
-                      <div className="h-2 w-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="h-2 w-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  return (
+    <Card className="w-full h-full border-none shadow-none bg-transparent">
+      <ChatContainer>
+        <Header>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="header-avatar">
+              <Stethoscope size={16} />
+            </div>
+            <h2>
+              Dr. CureCast <span className="status-indicator"></span>
+            </h2>
           </div>
-        </div>
-
-        <div className="p-4 border-t border-gray-200 bg-white">
-          <div className="flex gap-2 mb-2">
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={onVoiceInputRequest}
-              disabled={isProcessing}
-              className="flex items-center gap-1 text-primary-600 border-primary-200 hover:bg-primary-50"
-            >
-              <Mic className="h-4 w-4" />
-              Voice Input
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline"
-              onClick={onCameraInputRequest}
-              disabled={isProcessing}
-              className="flex items-center gap-1 text-primary-600 border-primary-200 hover:bg-primary-50"
-            >
-              <Camera className="h-4 w-4" />
-              Camera Input
-            </Button>
+          <div style={{ 
+            fontSize: '0.8rem', 
+            color: '#64748b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px' 
+          }}>
+            <Clock size={14} />
+            {new Date().toLocaleDateString()}
           </div>
-          <form 
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage();
-            }}
-          >
+        </Header>
+
+        <MessageContainer ref={messagesEndRef}>
+          {messages.map((message, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Message isUser={message.isUser}>
+                {renderMessageContent(message)}
+              </Message>
+            </motion.div>
+          ))}
+
+          {isProcessing && (
+            <Message isUser={false}>
+              <TypingIndicator>
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+                <span className="typing-dot" />
+              </TypingIndicator>
+            </Message>
+          )}
+          <div ref={messagesEndRef} />
+        </MessageContainer>
+
+        <ChipsContainer style={{ 
+          position: 'absolute', 
+          bottom: '80px', 
+          left: '0', 
+          right: '0', 
+          padding: '0 20px',
+          zIndex: 2,
+          justifyContent: 'center',
+          display: quickChips.length > 0 ? 'flex' : 'none'
+        }}>
+          {quickChips.map((chip, index) => (
+            <motion.div 
+              key={index} 
+              className="chip"
+              whileHover={{ y: -2, scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setInput(chip);
+                handleSendMessage(chip);
+                setQuickChips(prev => prev.filter(c => c !== chip));
+              }}
+            >
+              {chip}
+            </motion.div>
+          ))}
+        </ChipsContainer>
+
+        <InputContainer>
+          <div className="input-wrapper">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Describe your symptoms here..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+              placeholder={`Ask Dr. CureCast about your symptoms...`}
               disabled={isProcessing}
-              className="flex-1 bg-gray-50 border-gray-200 focus:border-primary-300 focus:ring-primary-200"
             />
-            <Button 
-              type="submit" 
-              disabled={!input.trim() || isProcessing}
-              className="bg-primary-600 hover:bg-primary-700 text-white"
+            <div className="action-buttons">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={onCameraInputRequest} 
+                  disabled={isProcessing || isUploading}
+                >
+                  <Camera size={18} color="#4f46e5" />
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onVoiceInputRequest}
+                  disabled={isProcessing}
+                >
+                  <Mic size={18} color="#4f46e5" />
+                </Button>
+              </motion.div>
+            </div>
+          </div>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Button
+              onClick={() => handleSendMessage()}
+              disabled={isProcessing || (!input.trim() && !imageUrl)}
+              className="bg-indigo-600 hover:bg-indigo-700"
             >
-              {isProcessing ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Send className="h-5 w-5" />
-              )}
-              <span className="sr-only">Send</span>
+              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
-          </form>
-          
-          <p className="text-xs text-gray-500 mt-2 text-center">
-            If you have a medical emergency, please call your local emergency number immediately.
-          </p>
-        </div>
-      </Card>
-    </div>
+          </motion.div>
+        </InputContainer>
+      </ChatContainer>
+    </Card>
   );
 };
 

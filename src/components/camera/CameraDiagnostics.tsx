@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Camera, Upload, X, Loader2, Eye, FileImage, ArrowRight, Stethoscope, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GEMINI_API_KEY } from '@/config/api';
 
 interface CameraDiagnosticsProps {
   standalone?: boolean;
@@ -29,7 +31,8 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
   const { toast } = useToast();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('camera');
+  type TabValue = 'camera' | 'upload';
+  const [activeTab, setActiveTab] = useState<TabValue>('camera');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [imageDescription, setImageDescription] = useState('');
@@ -37,6 +40,10 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Initialize Gemini AI
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   // Enhanced conditions with medical focus
   const conditions: ConditionType[] = [
@@ -90,14 +97,14 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
     }
   ];
 
-  const [selectedCondition, setSelectedCondition] = useState(conditions[0].id);
+  const [selectedCondition, setSelectedCondition] = useState<string>('skin');
 
   // Start camera when component mounts or tab changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (activeTab === 'camera') {
       // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
-        startCamera();
+      startCamera();
       }, 100);
       return () => clearTimeout(timer);
     } else {
@@ -186,11 +193,11 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
       if (context) {
         try {
           // Set canvas dimensions to match video
-          canvasRef.current.width = videoRef.current.videoWidth;
-          canvasRef.current.height = videoRef.current.videoHeight;
+        canvasRef.current.width = videoRef.current.videoWidth;
+        canvasRef.current.height = videoRef.current.videoHeight;
           
           // Draw the current video frame
-          context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+        context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
 
           // Get the image data with high quality
           const imageDataUrl = canvasRef.current.toDataURL('image/jpeg', 0.95);
@@ -200,8 +207,8 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
             throw new Error('Captured image is too small or invalid');
           }
 
-          setCapturedImage(imageDataUrl);
-          stopCamera();
+        setCapturedImage(imageDataUrl);
+        stopCamera();
           
           toast({
             title: "Image Captured",
@@ -254,7 +261,17 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
     }
   };
 
-  const analyzeImage = () => {
+  // Function to convert base64 to Uint8Array for Gemini
+  const base64ToUint8Array = (base64: string) => {
+    const binaryString = window.atob(base64.split(',')[1]);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  };
+
+  const analyzeImage = async () => {
     setIsAnalyzing(true);
     const currentImage = activeTab === 'camera' ? capturedImage : uploadedImage;
     
@@ -268,53 +285,114 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
       return;
     }
 
-    if (standalone) {
-      // Simulate AI analysis with a timeout
-      setTimeout(() => {
-        const selectedConditionData = conditions.find(c => c.id === selectedCondition);
-        
-        // Enhanced analysis results with severity levels and specific guidance
-        const analysisResults = {
-          snakebite: {
-            severity: 'emergency' as SeverityLevel,
-            analysis: "URGENT: The image shows signs consistent with a venomous snake bite. There is visible swelling and fang marks.\n\nIMMEDIATE ACTIONS REQUIRED:\n1. Keep the affected area below heart level\n2. Remove any constricting items (jewelry, tight clothing)\n3. Seek immediate emergency medical care\n4. Do NOT apply a tourniquet or try to suck out the venom\n\nThis is a medical emergency - please call emergency services or go to the nearest hospital immediately.",
-          },
-          skin: {
-            severity: 'medium' as SeverityLevel,
-            analysis: "The skin condition shows signs of contact dermatitis with moderate inflammation. Key observations:\n\n- Redness and mild swelling present\n- No signs of severe infection\n- Pattern suggests allergic reaction\n\nRECOMMENDED ACTIONS:\n1. Avoid scratching and potential triggers\n2. Apply cool compress for comfort\n3. Consider over-the-counter hydrocortisone cream\n4. If symptoms worsen or persist beyond 48 hours, consult a healthcare provider",
-          },
-          wound: {
-            severity: 'medium' as SeverityLevel,
-            analysis: "The wound appears to be a moderate laceration with these characteristics:\n\n- Clean edges with minimal debris\n- No signs of serious infection\n- Moderate depth\n\nRECOMMENDED CARE:\n1. Clean thoroughly with soap and water\n2. Apply antibiotic ointment\n3. Keep covered with sterile dressing\n4. Monitor for signs of infection (increased redness, warmth, pus)\n\nSeek medical attention if the wound is deep, shows signs of infection, or you're not up to date on tetanus shots.",
-          },
-          eye: {
-            severity: 'medium' as SeverityLevel,
-            analysis: "The eye shows signs of conjunctivitis (pink eye) with these observations:\n\n- Moderate redness of the conjunctiva\n- Some discharge present\n- No severe swelling\n\nRECOMMENDED ACTIONS:\n1. Avoid touching or rubbing eyes\n2. Use artificial tears for comfort\n3. Apply warm compresses\n4. If symptoms worsen or vision changes occur, seek immediate medical attention",
-          }
-        };
-
-        const result = analysisResults[selectedCondition as keyof typeof analysisResults];
-        
-        // Add severity warning for urgent conditions
-        if (selectedConditionData?.requiresUrgentCare) {
-          setAnalysisResult(`⚠️ URGENT MEDICAL ATTENTION RECOMMENDED ⚠️\n\n${result.analysis}`);
-        } else {
-          setAnalysisResult(result.analysis);
-        }
-        
-        setIsAnalyzing(false);
-      }, 2000);
-    } else {
-      // Handle integration mode
+    try {
+      // Get the condition data
       const selectedConditionData = conditions.find(c => c.id === selectedCondition);
-      const autoDescription = `Medical analysis requested for ${selectedConditionData?.name.toLowerCase()}. ${selectedConditionData?.prompt}`;
-      setImageDescription(prev => prev || autoDescription);
-      setReadyToSend(true);
+      
+      if (!selectedConditionData) {
+        throw new Error("Selected condition not found");
+      }
+      
+      // Create a special prompt that will cause highlighting in the chat
+      const highlightPrompt = `HIGHLIGHT:${selectedConditionData.name}:ANALYZE THIS IMAGE:
+        Please analyze this image showing a potential ${selectedConditionData.name.toLowerCase()}. 
+        ${selectedConditionData.prompt}
+        
+        HIGHLIGHT_CONSEQUENCES:
+        - What are the potential consequences if untreated?
+        - How serious is this condition?
+        
+        HIGHLIGHT_ADVICE:
+        - What treatment is recommended?
+        - When should the patient seek professional care?`;
+      
+      // Send to the chat using the existing function
+      if (window && (window as any).drCureCastHandleCameraInput) {
+        (window as any).drCureCastHandleCameraInput(
+          currentImage,
+          highlightPrompt
+        );
+        
+        toast({
+          title: "Image Analysis Sent",
+          description: `Analyzing for ${selectedConditionData.name} in chat window`,
+        });
+      } else {
+        throw new Error("Chat function not available");
+      }
+    } catch (error) {
+      console.error('Error sending to chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send image to chat",
+        variant: "destructive"
+      });
+    } finally {
       setIsAnalyzing(false);
     }
   };
+  
+  // Function to handle disease queries without images
+  const handleDiseaseQuery = (disease: string) => {
+    try {
+      // Create a special highlighting prompt for diseases
+      const diseasePrompt = `HIGHLIGHT:${disease}:DISEASE INFO:
+        Please provide information about ${disease}.
+        
+        HIGHLIGHT_CONSEQUENCES:
+        - What are the symptoms of ${disease}?
+        - What complications can arise from ${disease}?
+        - How contagious is this condition?
+        
+        HIGHLIGHT_ADVICE:
+        - What are the recommended treatments for ${disease}?
+        - What preventive measures should be taken?
+        - When should someone with ${disease} see a doctor?`;
+      
+      // Send to chat without an image
+      if (window && (window as any).drCureCastHandleCameraInput) {
+        (window as any).drCureCastHandleCameraInput(null, diseasePrompt);
+        
+        toast({
+          title: "Disease Query Sent",
+          description: `Information about ${disease} will appear in chat`,
+        });
+      } else {
+        throw new Error("Chat function not available");
+      }
+    } catch (error) {
+      console.error('Error with disease query:', error);
+      toast({
+        title: "Error",
+        description: "Failed to query disease information",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // List of common diseases for quick access
+  const commonDiseases = [
+    "Common Cold", 
+    "Fever", 
+    "Cough", 
+    "Flu",
+    "Headache"
+  ];
 
-  // Function to send image to DrCureCastAI
+  // Helper function to convert data URL to Blob
+  const dataURLtoBlob = (dataUrl: string) => {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
+
+  // Function to send image to DrCureCast
   const sendToDrCureCast = () => {
     const currentImage = activeTab === 'camera' ? capturedImage : uploadedImage;
     if (!currentImage) return;
@@ -367,6 +445,11 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
     }
   };
 
+  // Handle tab change with proper typing
+  const handleTabChange = (value: TabValue) => {
+    setActiveTab(value);
+  };
+
   return (
     <div className={`${standalone ? 'container mx-auto p-4 space-y-6' : 'space-y-4'} bg-white`}>
       {standalone && (
@@ -383,12 +466,13 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
           <Card className="overflow-hidden border border-gray-200">
             <CardHeader className="bg-gradient-to-r from-primary-50 to-primary-100 p-4">
               <CardTitle className="text-lg">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                   <TabsList className="grid grid-cols-2 w-full">
                     <TabsTrigger value="camera" className="w-full">Use Camera</TabsTrigger>
                     <TabsTrigger value="upload" className="w-full">Upload Photo</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="camera" className="mt-0">
+                
+                  <TabsContent value="camera" className="mt-4">
                     {!capturedImage ? (
                       <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-video flex items-center justify-center min-h-[300px]">
                         <video 
@@ -424,7 +508,8 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
                       </div>
                     )}
                   </TabsContent>
-                  <TabsContent value="upload" className="mt-0">
+                  
+                  <TabsContent value="upload" className="mt-4">
                     {!uploadedImage ? (
                       <div className="bg-gray-100 rounded-lg p-8 text-center min-h-[300px] flex items-center justify-center">
                         <div className="mx-auto flex flex-col items-center justify-center">
@@ -471,10 +556,9 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
                 </Tabs>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4" />
           </Card>
           
-          {(capturedImage || uploadedImage) && !analysisResult && (
+          {(capturedImage || uploadedImage) && (
             <Card className="mt-4 border border-gray-200">
               <CardContent className="p-4">
                 <Button 
@@ -490,10 +574,33 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
                   ) : (
                     <>
                       <Eye className="mr-2 h-4 w-4" />
-                      Analyze Image
+                      Send to AI Chat
                     </>
                   )}
                 </Button>
+              </CardContent>
+            </Card>
+          )}
+          
+          {standalone && commonDiseases.length > 0 && (
+            <Card className="mt-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Quick Disease Information</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {commonDiseases.map(disease => (
+                    <Button 
+                      key={disease} 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDiseaseQuery(disease)}
+                      className="border-primary-200 hover:border-primary-300"
+                    >
+                      {disease}
+                    </Button>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -534,107 +641,53 @@ const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true
             </Alert>
           )}
           
-          {standalone && analysisResult && (
-            <Card className="bg-gradient-to-br from-green-50 to-blue-50">
+          {analysisResult && (
+            <Card className="mt-4 bg-gradient-to-br from-green-50 to-blue-50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="h-5 w-5 text-primary" />
-                  Analysis Result
+                  Status
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-gray-700">{analysisResult}</p>
+              <CardContent className="p-4">
+                <div className="whitespace-pre-wrap text-gray-700">{analysisResult}</div>
               </CardContent>
             </Card>
           )}
         </div>
         
         {standalone && (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Select Condition to Analyze</CardTitle>
+          <div className="md:col-span-1">
+            <Card className="border border-gray-200">
+              <CardHeader className="bg-gradient-to-r from-primary-50 to-primary-100">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5" />
+                  Select Condition
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {conditions.map(condition => (
-                    <div 
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  {conditions.map((condition) => (
+                    <div
                       key={condition.id}
-                      className={`p-3 rounded-lg cursor-pointer border ${
+                      className={`p-4 rounded-lg cursor-pointer transition-all ${
                         selectedCondition === condition.id
-                          ? 'bg-primary-50 border-primary-200'
-                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                          ? 'bg-primary-100 border-2 border-primary-500'
+                          : 'bg-gray-50 border border-gray-200 hover:border-primary-300'
                       }`}
                       onClick={() => setSelectedCondition(condition.id)}
                     >
-                      <Label className="font-medium flex items-center">
-                        <input
-                          type="radio"
-                          name="condition"
-                          className="mr-2"
-                          checked={selectedCondition === condition.id}
-                          onChange={() => setSelectedCondition(condition.id)}
-                        />
-                        {condition.name}
-                      </Label>
-                      <p className="text-xs text-gray-500 ml-5">{condition.description}</p>
+                      <h3 className="font-semibold mb-1">{condition.name}</h3>
+                      <p className="text-sm text-gray-600">{condition.description}</p>
+                      {selectedCondition === condition.id && (
+                        <div className="mt-3 text-sm text-primary-700">
+                          <p className="font-medium">Guidance:</p>
+                          <p>{condition.prompt}</p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-            
-            {selectedCondition && (
-              <Card className="bg-blue-50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Stethoscope className="h-5 w-5 text-primary" />
-                    Guidance for {conditions.find(c => c.id === selectedCondition)?.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-700 mb-4">
-                    {conditions.find(c => c.id === selectedCondition)?.prompt}
-                  </p>
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Please also provide:</h4>
-                    <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-                      {conditions.find(c => c.id === selectedCondition)?.followUpQuestions.map((q, i) => (
-                        <li key={i}>{q}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Tips for Better Results</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex items-start">
-                    <span className="mr-2 text-primary">•</span>
-                    Ensure good lighting when taking photos
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2 text-primary">•</span>
-                    Keep the camera steady and focused
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2 text-primary">•</span>
-                    Include only the affected area in frame
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2 text-primary">•</span>
-                    Take multiple angles if needed
-                  </li>
-                  <li className="flex items-start">
-                    <span className="mr-2 text-primary">•</span>
-                    Make sure there's no glare or shadows
-                  </li>
-                </ul>
               </CardContent>
             </Card>
           </div>

@@ -9,13 +9,14 @@ import Navbar from '@/components/ui/navbar';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { app, auth } from './firebase';
-import { Stethoscope, MapPin, Bell, Phone, Shield, Brain, Menu, X, LogIn, ArrowRight, Camera, Globe, FileText, Mic, ChevronLeft, User, Info } from 'lucide-react';
+import { Stethoscope, MapPin, Bell, Phone, Shield, Brain, Menu, X, LogIn, ArrowRight, Camera, Globe, FileText, Mic, ChevronLeft, User, Info, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { useUser } from '@/contexts/UserContext';
 import HealthFactsPage from '@/components/health/HealthFactsPage';
+import FoundersPage from '@/components/founder/FoundersPage';
 
 const HEALTH_FACTS = [
   {
@@ -203,152 +204,254 @@ const App: React.FC = () => {
   // Dashboard renderer
   const renderDashboard = () => {
     return (
-      <div className="animate-fade-in space-y-8">
-        <div className="text-center mb-12 max-w-3xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-display font-bold text-gray-800 mb-4">Your Health Companion</h2>
-          <p className="text-lg text-gray-600">
-            CureCast offers healthcare guidance, resources, and support designed for rural communities. 
+      <div className="animate-fade-in space-y-12">
+        {/* Hero Section with animated gradient background */}
+        <div className="relative overflow-hidden rounded-3xl shadow-2xl bg-gradient-to-r from-blue-500 via-primary-500 to-purple-500 p-8 md:p-12">
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute inset-0 bg-[url('/pattern-dots.svg')] bg-repeat"></div>
+          </div>
+          <div className="relative z-10 text-center space-y-6 max-w-3xl mx-auto py-8 md:py-12">
+            <div className="inline-flex items-center justify-center p-3 bg-white/20 rounded-full backdrop-blur-sm mb-4">
+              <Stethoscope className="h-10 w-10 text-white" />
+            </div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-md">Your Health Companion</h2>
+            <p className="text-xl md:text-2xl text-white/90">
+              CureCast offers healthcare guidance, resources, and support designed for everyone
+            </p>
             {!isLoggedIn && (
-              <span className="ml-1">
-                <button 
-                  onClick={() => setShowLoginModal(true)}
-                  className="text-primary-600 font-medium hover:underline"
-                >
-                  Sign in
-                </button> to access all features.
-              </span>
+              <button 
+                onClick={() => setShowLoginModal(true)}
+                className="mt-6 px-8 py-3 bg-white text-primary-600 rounded-full text-lg font-medium hover:bg-primary-50 transition-all duration-300 hover:shadow-xl hover:scale-105 flex items-center gap-2 mx-auto"
+              >
+                <LogIn className="h-5 w-5" />
+                Sign in for full access
+              </button>
             )}
-          </p>
-        </div>
-
-        {/* Main Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Dr. CureCast AI */}
-          <div className="group relative bg-white rounded-2xl p-6 shadow-glass hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mb-4">
-                <Stethoscope className="h-6 w-6 text-primary-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Dr. CureCast AI</h3>
-              <p className="text-gray-600 mb-4">Get instant health guidance and advice</p>
-              <button 
-                onClick={() => handleFeatureAccess('chat')}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors duration-200 flex items-center gap-2"
-              >
-                Chat Now
-                {!isLoggedIn && <LogIn className="h-4 w-4" />}
-              </button>
-            </div>
           </div>
-
-          {/* Voice Interface */}
-          <div className="group relative bg-white rounded-2xl p-6 shadow-glass hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
-                <Mic className="h-6 w-6 text-blue-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Voice Interface</h3>
-              <p className="text-gray-600 mb-4">Speak with Dr. CureCast in your language</p>
-              <button 
-                onClick={openVoiceInterface}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2"
-              >
-                Start Speaking
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Camera Diagnostics */}
-          <div className="group relative bg-white rounded-2xl p-6 shadow-glass hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-                <Camera className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Camera Diagnostics</h3>
-              <p className="text-gray-600 mb-4">Upload or take photos for analysis</p>
-              <button 
-                onClick={openCameraInterface}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center gap-2"
-              >
-                Analyze Image
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
+          
+          {/* Animated wave effect at bottom */}
+          <div className="absolute bottom-0 left-0 right-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="w-full">
+              <path fill="#ffffff" fillOpacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,208C672,213,768,203,864,181.3C960,160,1056,128,1152,117.3C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+            </svg>
           </div>
         </div>
 
-        {/* Secondary Features */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-          {/* Health Vault */}
-          <div className="group relative bg-white rounded-2xl p-6 shadow-glass hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-                <Shield className="h-6 w-6 text-purple-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Health Vault</h3>
-              <p className="text-gray-600 mb-4">Securely store your health records</p>
-              <button 
-                onClick={() => handleFeatureAccess('health')}
-                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center gap-2"
-              >
-                Access Vault
-                {!isLoggedIn && <LogIn className="h-4 w-4" />}
-              </button>
-            </div>
+        {/* Main Features - Card Grid with more vibrant styling */}
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-10 w-2 bg-primary-500 rounded-full"></div>
+            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary-600 to-blue-600 text-transparent bg-clip-text">Main Features</h2>
           </div>
-
-          {/* Health Education */}
-          <div className="group relative bg-white rounded-2xl p-6 shadow-glass hover:shadow-lg transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative z-10">
-              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4">
-                <Brain className="h-6 w-6 text-amber-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Health Education</h3>
-              <p className="text-gray-600 mb-4">Learn about common health conditions</p>
-              <button 
-                onClick={() => handleFeatureAccess('education')}
-                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors duration-200 flex items-center gap-2"
-              >
-                Learn Facts
-                {!isLoggedIn && <LogIn className="h-4 w-4" />}
-              </button>
-              {/* Health Facts Section */}
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {HEALTH_FACTS.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r ${item.color} shadow hover:scale-[1.03] transition-transform duration-200`}
-                  >
-                    <div className="shrink-0">{item.icon}</div>
-                    <span className="text-base font-medium text-gray-700">{item.fact}</span>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Dr. CureCast AI Card */}
+            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
+              <div className="relative h-full bg-gradient-to-br from-primary-600 to-primary-400 rounded-2xl p-6 shadow-xl overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary-300 rounded-full opacity-30"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Stethoscope className="h-8 w-8 text-white" />
                   </div>
-                ))}
+                  <h3 className="text-2xl font-bold text-white mb-4">Dr. CureCast AI</h3>
+                  <p className="text-white/80 mb-6">Get instant health guidance and expert advice for your concerns</p>
+                  <button 
+                    onClick={() => handleFeatureAccess('chat')}
+                    className="px-6 py-3 bg-white text-primary-600 rounded-xl hover:bg-primary-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
+                  >
+                    Chat Now
+                    {!isLoggedIn ? <LogIn className="h-4 w-4" /> : <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Voice Interface Card */}
+            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
+              <div className="relative h-full bg-gradient-to-br from-blue-600 to-blue-400 rounded-2xl p-6 shadow-xl overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-300 rounded-full opacity-30"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Mic className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4">Voice Interface</h3>
+                  <p className="text-white/80 mb-6">Speak naturally with our AI in your preferred language</p>
+                  <button 
+                    onClick={openVoiceInterface}
+                    className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
+                  >
+                    Start Speaking
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Camera Diagnostics Card */}
+            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
+              <div className="relative h-full bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-2xl p-6 shadow-xl overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-300 rounded-full opacity-30"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Camera className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4">Camera Diagnostics</h3>
+                  <p className="text-white/80 mb-6">Upload or take photos for instant medical analysis</p>
+                  <button 
+                    onClick={openCameraInterface}
+                    className="px-6 py-3 bg-white text-emerald-600 rounded-xl hover:bg-emerald-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
+                  >
+                    Analyze Image
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Health Resources Section */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-display font-bold text-gray-800 mb-6">Health Resources</h2>
+        {/* Secondary Features - More Modern and Colorful */}
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-10 w-2 bg-purple-500 rounded-full"></div>
+            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 text-transparent bg-clip-text">Additional Services</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Health Vault Card */}
+            <div className="group h-full transform transition-all duration-300 hover:scale-[1.02]">
+              <div className="relative h-full bg-white border-2 border-purple-100 rounded-2xl p-6 shadow-lg overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Shield className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Health Vault</h3>
+                  <p className="text-gray-600 mb-6">Securely store and access your health records anytime, anywhere</p>
+                  <button 
+                    onClick={() => handleFeatureAccess('health')}
+                    className="mt-auto px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:from-purple-700 hover:to-indigo-700 transition-colors duration-200 flex items-center gap-2 font-medium shadow-md"
+                  >
+                    Access Vault
+                    {!isLoggedIn ? <LogIn className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Health Education Card */}
+            <div className="group h-full transform transition-all duration-300 hover:scale-[1.02]">
+              <div className="relative h-full bg-white border-2 border-amber-100 rounded-2xl p-6 shadow-lg overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Brain className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4">Health Education</h3>
+                  <p className="text-gray-600 mb-6">Learn about common health conditions with expert insights</p>
+                  <button 
+                    onClick={() => handleFeatureAccess('education')}
+                    className="mt-auto px-6 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-colors duration-200 flex items-center gap-2 font-medium shadow-md"
+                  >
+                    Learn Facts
+                    {!isLoggedIn ? <LogIn className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Health Facts Carousel - Dynamic and Interactive */}
+        <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-3xl p-8 shadow-lg">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-10 w-2 bg-amber-500 rounded-full"></div>
+            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-500 text-transparent bg-clip-text">Health Facts</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {HEALTH_FACTS.slice(0, 4).map((item, idx) => (
+              <div
+                key={idx}
+                className="group bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-transparent hover:border-amber-200"
+              >
+                <div className="flex flex-col gap-4 items-center text-center">
+                  <div className={`p-4 rounded-full bg-gradient-to-br ${item.color}`}>
+                    {item.icon}
+                  </div>
+                  <span className="text-base font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                    {item.fact}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Health Resources - More Visual and Engaging */}
+        <div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-10 w-2 bg-emerald-500 rounded-full"></div>
+            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-500 text-transparent bg-clip-text">Health Resources</h2>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-              <h4 className="font-semibold text-gray-800 mb-2">Common Cold & Flu Guide</h4>
-              <p className="text-gray-600">Learn about symptoms and home remedies</p>
+            <div className="bg-gradient-to-br from-white to-emerald-50 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-emerald-400">
+              <h4 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-emerald-500" />
+                Common Cold & Flu Guide
+              </h4>
+              <p className="text-gray-600">Learn about symptoms, home remedies, and when to seek professional care</p>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-              <h4 className="font-semibold text-gray-800 mb-2">Seasonal Health Tips</h4>
-              <p className="text-gray-600">Stay healthy during weather changes</p>
+            
+            <div className="bg-gradient-to-br from-white to-blue-50 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-blue-400">
+              <h4 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <Globe className="h-5 w-5 text-blue-500" />
+                Seasonal Health Tips
+              </h4>
+              <p className="text-gray-600">Practical advice to stay healthy during weather changes and seasonal transitions</p>
             </div>
-            <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-              <h4 className="font-semibold text-gray-800 mb-2">Emergency First Aid</h4>
-              <p className="text-gray-600">Basic first aid procedures everyone should know</p>
+            
+            <div className="bg-gradient-to-br from-white to-red-50 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300 border-l-4 border-red-400">
+              <h4 className="text-xl font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <Bell className="h-5 w-5 text-red-500" />
+                Emergency First Aid
+              </h4>
+              <p className="text-gray-600">Essential first aid procedures everyone should know for common emergency situations</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Know the Founder Card - Elevated Design */}
+        <div 
+          onClick={() => handleFeatureAccess('founder')} 
+          className="relative overflow-hidden rounded-3xl cursor-pointer transform transition-all duration-300 hover:scale-[1.02]"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500"></div>
+          <div className="absolute inset-0 bg-[url('/pattern-dots.svg')] bg-repeat opacity-20"></div>
+          
+          <div className="relative z-10 flex items-center justify-between p-8 md:p-12">
+            <div className="space-y-4 max-w-2xl">
+              <div className="inline-flex items-center justify-center p-3 bg-white/20 rounded-full backdrop-blur-sm">
+                <Crown className="h-8 w-8 text-white drop-shadow-glow" />
+              </div>
+              <h3 className="text-3xl md:text-4xl font-bold text-white drop-shadow-md">Meet Our Founder</h3>
+              <p className="text-xl text-white/90">
+                Discover the story behind CureCast Health Compass and the vision of Raghava Annala
+              </p>
+              <div className="inline-flex items-center gap-2 text-white font-medium mt-4">
+                Learn more 
+                <ArrowRight className="h-5 w-5" />
+              </div>
+            </div>
+            
+            <div className="hidden md:block">
+              <div className="w-32 h-32 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                <Crown className="h-16 w-16 text-white drop-shadow-glow" />
+              </div>
             </div>
           </div>
         </div>
@@ -370,20 +473,34 @@ const App: React.FC = () => {
 
   // Main app UI
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 relative">
       {/* App Header */}
-      <header className="sticky top-0 left-0 right-0 z-[100] bg-gradient-to-r from-primary-600 to-emerald-500 shadow-lg flex items-center justify-between px-6 py-3">
-        <div className="flex items-center gap-3">
-          <Stethoscope className="h-8 w-8 text-white drop-shadow" />
-          <span className="text-2xl font-extrabold text-white tracking-wide drop-shadow">Dr.CureCast</span>
-          <span className="ml-3 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-semibold uppercase tracking-wider shadow-sm">Excellence in AI Health Guidance</span>
-        </div>
-        {user?.name && (
-          <div className="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full shadow text-white font-semibold text-base">
-            <User className="h-5 w-5 mr-1" />
-            Welcome, <span className="ml-1 capitalize">{user.name}</span>
+      <header className="sticky top-0 left-0 right-0 z-[100] bg-gradient-to-r from-primary-600 via-primary-500 to-indigo-600 shadow-xl">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <Stethoscope className="h-8 w-8 text-white drop-shadow" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-extrabold text-white tracking-wide drop-shadow">Dr.CureCast</h1>
+              <p className="text-xs text-white/80">Excellence in AI Health Guidance</p>
+            </div>
           </div>
-        )}
+          <div className="flex items-center gap-4">
+            {user?.name && (
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-5 py-2 rounded-xl shadow-lg text-white">
+                <div className="h-8 w-8 bg-white/30 rounded-full flex items-center justify-center">
+                  <User className="h-5 w-5" />
+                </div>
+                <span className="capitalize font-medium">{user.name}</span>
+              </div>
+            )}
+            <div className="hidden md:block text-right">
+              <span className="text-xs text-white/70 block">Developed with ❤️ by</span>
+              <span className="text-sm text-white font-medium">Raghava Annala</span>
+            </div>
+          </div>
+        </div>
       </header>
       {/* Navbar component */}
       <Navbar 
@@ -488,6 +605,7 @@ const App: React.FC = () => {
             onImageCaptured={handleCameraInput} 
           />
         )}
+        {activePage === 'founder' && <FoundersPage />}
         {activePage === 'education' && <HealthFactsPage />}
         {!isLoggedIn && activePage !== 'dashboard' && (
           <div className="text-center py-12">
