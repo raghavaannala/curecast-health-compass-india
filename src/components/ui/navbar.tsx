@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, ChevronLeft, ChevronRight, Settings, LogOut, Crown, LogIn } from 'lucide-react';
+import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, ChevronLeft, ChevronRight, Settings, LogOut, Crown, LogIn, Droplet, Activity, Scan, Server, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '@/firebase';
+import NavSubmenu from './NavSubmenu';
 
 interface NavbarProps {
   isLoggedIn: boolean;
@@ -46,7 +47,11 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
     { id: 'chat', path: '/chat', label: 'Dr.CureCast', icon: MessageSquare, color: 'text-emerald-600 bg-emerald-100' },
     { id: 'voice', path: '/voice', label: 'Voice', icon: Mic, color: 'text-purple-600 bg-purple-100' },
     { id: 'camera', path: '/camera', label: 'Camera', icon: Camera, color: 'text-amber-600 bg-amber-100' },
+    { id: 'diabetes', path: '/health/diabetes', label: 'Diabetes', icon: Droplet, color: 'text-blue-600 bg-blue-100' },
+    { id: 'bp', path: '/health/blood-pressure', label: 'Blood Pressure', icon: Activity, color: 'text-red-600 bg-red-100' },
+    { id: 'skin', path: '/health/skin-disease', label: 'Skin Disease', icon: Scan, color: 'text-purple-600 bg-purple-100' },
     { id: 'health', path: '/health', label: 'Health Vault', icon: Shield, color: 'text-indigo-600 bg-indigo-100' },
+    { id: 'architecture', path: '/about/architecture', label: 'Architecture', icon: Server, color: 'text-gray-600 bg-gray-100' },
     { id: 'profile', path: '/profile', label: 'Profile', icon: User, color: 'text-gray-600 bg-gray-100' },
   ];
 
@@ -96,8 +101,14 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
         transition={{ duration: 0.3, delay: 0.1 }}
       >
         <div className="flex justify-around items-center py-2">
-          {navItems
-            .slice(0, 4)
+          {[
+            navItems.find(item => item.id === 'dashboard'),
+            navItems.find(item => item.id === 'chat'),
+            navItems.find(item => item.id === 'diabetes'),
+            navItems.find(item => item.id === 'bp'),
+            navItems.find(item => item.id === 'skin')
+          ]
+            .filter(Boolean)
             .map((item, index) => (
               <motion.div
                 key={item.id}
@@ -191,28 +202,79 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
                 
                 {/* Navigation items with staggered animation */}
                 <div className="space-y-1.5">
-                  {navItems.map((item, index) => {
-                    return (
-                      <motion.div
-                        key={item.id}
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <Button
-                          variant={location.pathname === item.path ? "default" : "ghost"}
-                          size="sm"
-                          className={`flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg ${location.pathname === item.path ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
-                          onClick={() => handlePageChange(item.path)}
+                  {/* Main navigation items */}
+                  {navItems
+                    .filter(item => !['architecture'].includes(item.id))
+                    .map((item, index) => {
+                      // Handle about section (for architecture)
+                      if (item.id === 'profile') {
+                        const aboutItem = {
+                          id: 'about',
+                          path: '/about',
+                          label: 'About',
+                          icon: Info,
+                          color: 'text-gray-600 bg-gray-100'
+                        };
+                        
+                        return (
+                          <React.Fragment key={item.id}>
+                            <motion.div
+                              initial={{ x: -20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: index * 0.05 }}
+                            >
+                              <NavSubmenu 
+                                parentItem={aboutItem}
+                                childItems={[
+                                  navItems.find(i => i.id === 'architecture')!
+                                ]}
+                                onNavigate={handlePageChange}
+                              />
+                            </motion.div>
+                            
+                            <motion.div
+                              initial={{ x: -20, opacity: 0 }}
+                              animate={{ x: 0, opacity: 1 }}
+                              transition={{ delay: (index + 1) * 0.05 }}
+                            >
+                              <Button
+                                variant={location.pathname === item.path ? "default" : "ghost"}
+                                size="sm"
+                                className={`flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg ${location.pathname === item.path ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                                onClick={() => handlePageChange(item.path)}
+                              >
+                                <div className={`rounded-full p-1.5 ${location.pathname === item.path ? 'bg-white bg-opacity-20' : item.color}`}>
+                                  <item.icon className={`h-5 w-5 ${location.pathname === item.path ? 'text-white' : ''}`} />
+                                </div>
+                                <span className="font-medium">{item.label}</span>
+                              </Button>
+                            </motion.div>
+                          </React.Fragment>
+                        );
+                      }
+                      
+                      // Regular item
+                      return (
+                        <motion.div
+                          key={item.id}
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: index * 0.05 }}
                         >
-                          <div className={`rounded-full p-1.5 ${location.pathname === item.path ? 'bg-white bg-opacity-20' : item.color}`}>
-                            <item.icon className={`h-5 w-5 ${location.pathname === item.path ? 'text-white' : ''}`} />
-                          </div>
-                          <span className="font-medium">{item.label}</span>
-                        </Button>
-                      </motion.div>
-                    );
-                  })}
+                          <Button
+                            variant={location.pathname === item.path ? "default" : "ghost"}
+                            size="sm"
+                            className={`flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg ${location.pathname === item.path ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
+                            onClick={() => handlePageChange(item.path)}
+                          >
+                            <div className={`rounded-full p-1.5 ${location.pathname === item.path ? 'bg-white bg-opacity-20' : item.color}`}>
+                              <item.icon className={`h-5 w-5 ${location.pathname === item.path ? 'text-white' : ''}`} />
+                            </div>
+                            <span className="font-medium">{item.label}</span>
+                          </Button>
+                        </motion.div>
+                      );
+                    })}
                 </div>
                 
                 {/* Bottom section with settings and logout */}
@@ -245,7 +307,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
       {/* Mini sidebar when collapsed on desktop */}
       {!isOpen && !isMobile && (
         <motion.div 
-          className="fixed top-16 left-0 bottom-0 w-16 bg-white border-r border-gray-200 shadow-sm z-[90] py-4"
+          className="fixed top-16 left-0 bottom-0 w-16 bg-white border-r border-gray-200 shadow-sm z-[90] py-4 overflow-y-auto"
           initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.3 }}
@@ -265,32 +327,78 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
           </div>
           
           <div className="flex flex-col items-center space-y-4">
-            {navItems.map((item, index) => {
-              return (
+            {/* Display all main navigation items */}
+            {navItems
+              .filter(item => !['architecture'].includes(item.id))
+              .map((item, index) => {
+                // For About items, add a visual indicator that they have submenus
+                const hasSubmenu = item.id === 'profile';
+                const isSubmenuActive = 
+                  (item.id === 'profile' && location.pathname === '/about/architecture');
+                
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="relative group"
+                  >
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handlePageChange(item.path)}
+                      className={`rounded-full ${location.pathname === item.path || isSubmenuActive ? item.color : 'hover:bg-gray-100'}`}
+                      title={item.label}
+                    >
+                      <item.icon className={`h-5 w-5 ${location.pathname === item.path || isSubmenuActive ? '' : 'text-gray-500'}`} />
+                    </Button>
+                    
+                    {/* Tooltip */}
+                    <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+                      {item.label}
+                    </div>
+                    
+                    {/* Submenu indicator */}
+                    {hasSubmenu && (
+                      <div className="absolute -right-1 -bottom-1 h-2 w-2 bg-primary-500 rounded-full"></div>
+                    )}
+                  </motion.div>
+                );
+              })}
+              
+            {/* Add divider for submenu items */}
+            <div className="w-8 border-t border-gray-200 my-2"></div>
+            
+            {/* Display architecture submenu item directly in mini sidebar */}
+            {[
+              navItems.find(i => i.id === 'architecture')
+            ]
+              .filter(Boolean)
+              .map((item, index) => (
                 <motion.div
-                  key={item.id}
+                  key={item!.id}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: (index + navItems.length) * 0.05 }}
                   className="relative group"
                 >
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handlePageChange(item.path)}
-                    className={`rounded-full ${location.pathname === item.path ? item.color : 'hover:bg-gray-100'}`}
-                    title={item.label}
+                    onClick={() => handlePageChange(item!.path)}
+                    className={`rounded-full ${location.pathname === item!.path ? item!.color : 'hover:bg-gray-100'}`}
+                    title={item!.label}
                   >
-                    <item.icon className={`h-5 w-5 ${location.pathname === item.path ? '' : 'text-gray-500'}`} />
+                    {React.createElement(item!.icon, { className: `h-5 w-5 ${location.pathname === item!.path ? '' : 'text-gray-500'}` })}
                   </Button>
                   
                   {/* Tooltip */}
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap">
-                    {item.label}
+                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
+                    {item!.label}
                   </div>
                 </motion.div>
-              );
-            })}
+              ))}
           </div>
         </motion.div>
       )}

@@ -5,11 +5,17 @@ import ProfilePage from './components/ProfilePage';
 import HealthVault from '@/components/health/HealthVault';
 import VoiceInterface from '@/components/voice/VoiceInterface';
 import CameraDiagnostics from '@/components/camera/CameraDiagnostics';
+import DiabetesChecker from '@/components/health/DiabetesChecker';
+import BloodPressureChecker from '@/components/health/BloodPressureChecker';
+import SkinDiseaseChecker from '@/components/health/SkinDiseaseChecker';
+import PopularUseCases from '@/components/health/PopularUseCases';
+import AIDisclaimer from '@/components/ui/AIDisclaimer';
+import ArchitecturePage from '@/pages/ArchitecturePage';
 import Navbar from '@/components/ui/navbar';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { app, auth } from './firebase';
-import { Stethoscope, MapPin, Bell, Phone, Shield, Brain, Menu, X, LogIn, ArrowRight, Camera, Globe, FileText, Mic, ChevronLeft, User, Info, Crown, LogOut } from 'lucide-react';
+import { Stethoscope, MapPin, Bell, Phone, Shield, Brain, Menu, X, LogIn, ArrowRight, Camera, Globe, FileText, Mic, ChevronLeft, User, Info, Crown, LogOut, Droplet, Activity, Scan } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -303,6 +309,75 @@ const App: React.FC = () => {
               </div>
             </div>
           </div>
+          
+          {/* Health Checker Features */}
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-8">
+            {/* Diabetes Checker Card */}
+            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
+              <div className="relative h-full bg-gradient-to-br from-blue-500 to-blue-300 rounded-2xl p-6 shadow-xl overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-200 rounded-full opacity-30"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Droplet className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4">Diabetes Checker</h3>
+                  <p className="text-white/80 mb-6">Check symptoms & get diet recommendations</p>
+                  <button 
+                    onClick={() => handleFeatureAccess('/health/diabetes')}
+                    className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
+                  >
+                    Check Now
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Blood Pressure Monitor Card */}
+            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
+              <div className="relative h-full bg-gradient-to-br from-red-500 to-red-300 rounded-2xl p-6 shadow-xl overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-red-200 rounded-full opacity-30"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Activity className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4">Blood Pressure Monitor</h3>
+                  <p className="text-white/80 mb-6">Track BP readings & get lifestyle advice</p>
+                  <button 
+                    onClick={() => handleFeatureAccess('/health/blood-pressure')}
+                    className="px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
+                  >
+                    Check Now
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Skin Disease Analyzer Card */}
+            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
+              <div className="relative h-full bg-gradient-to-br from-purple-500 to-purple-300 rounded-2xl p-6 shadow-xl overflow-hidden">
+                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
+                <div className="absolute -right-8 -top-8 w-32 h-32 bg-purple-200 rounded-full opacity-30"></div>
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                    <Scan className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-4">Skin Disease Analyzer</h3>
+                  <p className="text-white/80 mb-6">Upload images for AI-powered analysis</p>
+                  <button 
+                    onClick={() => handleFeatureAccess('/health/skin-disease')}
+                    className="px-6 py-3 bg-white text-purple-600 rounded-xl hover:bg-purple-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
+                  >
+                    Check Now
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Secondary Features - More Modern and Colorful */}
@@ -356,6 +431,9 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* Popular Use Cases Section */}
+        <PopularUseCases />
         
         {/* Health Facts Carousel - Dynamic and Interactive */}
         <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-3xl p-8 shadow-lg">
@@ -608,12 +686,21 @@ const App: React.FC = () => {
           } />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/health" element={<HealthVault />} />
+          <Route path="/health/diabetes" element={<DiabetesChecker />} />
+          <Route path="/health/blood-pressure" element={<BloodPressureChecker />} />
+          <Route path="/health/skin-disease" element={<SkinDiseaseChecker />} />
+          <Route path="/about/architecture" element={<ArchitecturePage />} />
           <Route path="/camera" element={<CameraDiagnostics standalone={true} onImageCaptured={handleCameraInput} />} />
           <Route path="/voice" element={<VoiceInterface standalone={true} onTranscriptReady={handleVoiceInput} />} />
           <Route path="/education" element={<HealthFactsPage />} />
           <Route path="/founders" element={<FoundersPage />} />
         </Routes>
       </main>
+      
+      {/* Global AI Disclaimer Footer */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-amber-50 to-orange-50 border-t border-amber-200 py-2 px-4 shadow-md">
+        <AIDisclaimer variant="compact" className="max-w-6xl mx-auto" />
+      </div>
     </div>
   );
 };

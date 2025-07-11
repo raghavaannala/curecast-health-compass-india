@@ -1091,7 +1091,7 @@ Please try again or contact support if this issue persists.`);
         
         // Create the API request promise
         const apiRequestPromise = (async () => {
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+          const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
           const result = await model.generateContent(diseasePrompt);
           const response = await result.response;
           return response.text();
