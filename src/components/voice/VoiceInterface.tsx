@@ -452,55 +452,85 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ standalone = true, onTr
         </div>
       )}
 
-      <Card className="bg-gradient-to-br from-blue-50 to-indigo-50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Mic className="h-5 w-5 text-primary" />
+      <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-100 shadow-xl">
+        <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-t-lg">
+          <CardTitle className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm">
+              <Mic className="h-6 w-6 text-white" />
+            </div>
             Speak to Dr.CureCast
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center p-8 space-y-6">
-            <div className={`w-24 h-24 rounded-full flex items-center justify-center 
-              ${isRecording ? 'bg-red-100 animate-pulse' : 'bg-primary-100'}`}>
+        <CardContent className="p-8">
+          <div className="flex flex-col items-center justify-center space-y-8">
+            <div className={`w-32 h-32 rounded-full flex items-center justify-center transition-all duration-500 shadow-lg ring-4 
+              ${isRecording ? 'bg-gradient-to-br from-red-500 to-pink-600 animate-pulse scale-110 ring-red-200' : 'bg-gradient-to-br from-blue-500 to-indigo-600 hover:scale-105 ring-blue-200'}`}>
               {isRecording ? (
-                <Mic className="h-12 w-12 text-red-600" />
+                <Mic className="h-16 w-16 text-white drop-shadow-lg animate-bounce" />
               ) : (
-                <Mic className="h-12 w-12 text-primary-600" />
+                <Mic className="h-16 w-16 text-white drop-shadow-lg" />
               )}
             </div>
             
             <div className="flex gap-4">
               {!isRecording ? (
-                <Button onClick={startRecording} className="bg-primary-600">
+                <Button onClick={startRecording} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                  <Mic className="mr-2 h-5 w-5" />
                   Start Speaking
                 </Button>
               ) : (
-                <Button onClick={stopRecording} variant="destructive">
+                <Button onClick={stopRecording} className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300">
+                  <MicOff className="mr-2 h-5 w-5" />
                   Stop Recording
                 </Button>
               )}
             </div>
             
-            <p className="text-sm text-center text-gray-500">
-              {isRecording 
-                ? "I'm listening... Speak clearly into your microphone." 
-                : "Press 'Start Speaking' and tell Dr. CureCast how you're feeling"
-              }
-            </p>
+            <div className="text-center space-y-2">
+              <p className={`text-lg font-medium transition-colors duration-300 ${
+                isRecording ? 'text-red-600' : 'text-blue-600'
+              }`}>
+                {isRecording 
+                  ? "🎤 I'm listening..." 
+                  : "💬 Ready to listen"
+                }
+              </p>
+              <p className="text-sm text-gray-500">
+                {isRecording 
+                  ? "Speak clearly into your microphone" 
+                  : "Press 'Start Speaking' and tell Dr. CureCast how you're feeling"
+                }
+              </p>
+              {isRecording && (
+                <div className="flex justify-center mt-4">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-8 bg-red-400 rounded-full animate-pulse"></div>
+                    <div className="w-2 h-6 bg-red-500 rounded-full animate-pulse animation-delay-100"></div>
+                    <div className="w-2 h-10 bg-red-600 rounded-full animate-pulse animation-delay-200"></div>
+                    <div className="w-2 h-4 bg-red-400 rounded-full animate-pulse animation-delay-300"></div>
+                    <div className="w-2 h-7 bg-red-500 rounded-full animate-pulse animation-delay-400"></div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {transcript && (
-        <Card>
-          <CardHeader className="pb-2">
+        <Card className="border-2 border-green-100 bg-gradient-to-br from-green-50 to-emerald-50 shadow-lg">
+          <CardHeader className="pb-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-t-lg">
             <CardTitle className="flex justify-between items-center">
-              <span>You said:</span>
+              <div className="flex items-center gap-2">
+                <div className="p-1 bg-white/20 rounded-full">
+                  <Mic className="h-4 w-4" />
+                </div>
+                <span>You said:</span>
+              </div>
               {!standalone && readyToSend && (
                 <Button 
                   onClick={sendToDrCureCast} 
-                  className="bg-primary-600 text-white"
+                  className="bg-white text-green-600 hover:bg-green-50 shadow-md hover:shadow-lg transition-all duration-300"
                   size="sm"
                 >
                   Send to Dr.CureCast
@@ -509,47 +539,73 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ standalone = true, onTr
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-gray-700">{transcript}</p>
+          <CardContent className="p-4">
+            <div className="bg-white rounded-lg p-4 shadow-inner">
+              <p className="text-gray-700 leading-relaxed">{transcript}</p>
+            </div>
           </CardContent>
         </Card>
       )}
 
       {response && (
-        <Card className="bg-gradient-to-br from-green-50 to-blue-50">
-          <CardHeader className="bg-blue-50">
+        <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-200 shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-t-lg">
             <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Stethoscope className="h-5 w-5 text-primary" />
-                Dr.CureCast's Response:
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm">
+                  <Stethoscope className="h-5 w-5 text-white" />
+                </div>
+                <span>Dr.CureCast's Response:</span>
               </div>
               <div className="flex gap-2">
                 {!isSpeaking ? (
-                  <Button onClick={speakResponse} size="sm" variant="outline" className="flex items-center gap-1">
-                    <Play className="h-4 w-4" /> Listen Again
+                  <Button onClick={speakResponse} size="sm" className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm transition-all duration-300">
+                    <Play className="h-4 w-4 mr-1" /> Listen Again
                   </Button>
                 ) : (
-                  <Button onClick={stopSpeaking} size="sm" variant="outline" className="flex items-center gap-1">
-                    <Square className="h-4 w-4" /> Stop
+                  <Button onClick={stopSpeaking} size="sm" className="bg-red-500/20 hover:bg-red-500/30 text-white border border-red-300/30 backdrop-blur-sm transition-all duration-300">
+                    <Square className="h-4 w-4 mr-1" /> Stop
                   </Button>
                 )}
               </div>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
-            <p className="text-gray-700">{response}</p>
+          <CardContent className="p-6">
+            <div className="bg-white rounded-xl p-6 shadow-inner border border-blue-100">
+              <p className="text-gray-700 leading-relaxed text-lg">{response}</p>
+            </div>
+            {isSpeaking && (
+              <div className="flex justify-center mt-4">
+                <div className="flex items-center gap-2 text-blue-600">
+                  <Volume2 className="h-5 w-5 animate-pulse" />
+                  <span className="text-sm font-medium">Speaking...</span>
+                  <div className="flex space-x-1 ml-2">
+                    <div className="w-1 h-4 bg-blue-400 rounded-full animate-pulse"></div>
+                    <div className="w-1 h-6 bg-blue-500 rounded-full animate-pulse animation-delay-100"></div>
+                    <div className="w-1 h-3 bg-blue-600 rounded-full animate-pulse animation-delay-200"></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
       
       {isProcessing && (
-        <div className="flex justify-center py-4">
-          <div className="animate-pulse flex items-center gap-2">
-            <div className="h-2 w-2 bg-primary rounded-full"></div>
-            <div className="h-2 w-2 bg-primary rounded-full animation-delay-200"></div>
-            <div className="h-2 w-2 bg-primary rounded-full animation-delay-400"></div>
-          </div>
-        </div>
+        <Card className="border-2 border-yellow-200 bg-gradient-to-br from-yellow-50 to-orange-50">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mb-4 animate-spin">
+              <Stethoscope className="h-8 w-8 text-white" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Processing your message...</h3>
+            <p className="text-sm text-gray-600 text-center">Dr.CureCast is analyzing and preparing a response</p>
+            <div className="flex items-center gap-1 mt-4">
+              <div className="h-2 w-2 bg-yellow-500 rounded-full animate-bounce"></div>
+              <div className="h-2 w-2 bg-orange-500 rounded-full animate-bounce animation-delay-100"></div>
+              <div className="h-2 w-2 bg-yellow-500 rounded-full animate-bounce animation-delay-200"></div>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

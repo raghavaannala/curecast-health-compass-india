@@ -1,0 +1,58 @@
+Technologies Used
+Frontend
+
+React + TypeScript
+TailwindCSS for styling
+React Router for navigation
+Lucide icons for UI elements
+Design Features
+
+Gradient backgrounds
+Animated transitions
+Responsive layout
+Card-based UI
+Styling Patterns
+
+Consistent color scheme (primary, blue, purple gradients)
+Modern card designs with hover effects
+Responsive grid layouts
+Animated transitions
+Usage Flow
+User lands on homepage
+Authentication check
+Access to features:
+If logged in: Direct access
+If not logged in: Prompt for Google Sign-In
+Feature interaction through cards
+Voice/Camera interface access
+Health checking tools
+Frontend:
+src/
+├── App.tsx                    # Main application component
+├── main.tsx                   # Entry point
+├── components/
+│   ├── GoogleSignIn.tsx      # Authentication component
+│   ├── PopularUseCases.tsx   # Features showcase component
+│   └── chat/
+│       └── DrCureCast.tsx    # AI chat interface
+├── styles/
+│   └── globals.css           # Global styles
+└── types/
+    └── index.d.ts            # TypeScript declarations
+
+Backend files:
+server/
+├── index.ts                   # Server entry point
+├── routes/
+│   ├── auth.ts               # Authentication routes
+│   ├── chat.ts               # Chat API routes
+│   └── health.ts             # Health check routes
+├── models/
+│   ├── User.ts               # User schema
+│   └── ChatHistory.ts        # Chat history schema
+├── controllers/
+│   ├── authController.ts     # Auth logic
+│   ├── chatController.ts     # Chat logic
+│   └── healthController.ts   # Health check logic
+└── middleware/
+    └── auth.ts               # Authentication middleware

@@ -19,6 +19,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   // Handle window resize to determine if we're on mobile
   useEffect(() => {
@@ -57,50 +58,150 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
 
   return (
     <>
-      {/* Top navigation bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="flex items-center justify-between px-4 h-16">
-          {/* Logo and title */}
-          <div className="flex items-center gap-2">
-            <Stethoscope className="h-6 w-6 text-primary-600" />
-            <span className="text-lg font-semibold text-primary-800">CureCast</span>
+      {/* Desktop Sidebar Toggle Button */}
+      <motion.button
+        className="hidden md:block fixed top-[80px] left-4 z-[95] bg-white border border-gray-200 text-gray-700 p-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-gray-50"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {isCollapsed ? (
+          <ChevronRight className="h-5 w-5" />
+        ) : (
+          <ChevronLeft className="h-5 w-5" />
+        )}
+      </motion.button>
+
+      {/* Desktop Sidebar */}
+      <motion.div
+        className="hidden md:block fixed top-[70px] left-0 bottom-0 z-[90] bg-white/95 backdrop-blur-xl border-r border-gray-200/50 shadow-xl"
+        initial={false}
+        animate={{
+          width: isCollapsed ? '80px' : '280px',
+          opacity: 1
+        }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+      >
+        <div className="flex flex-col h-full p-4 overflow-hidden">
+          {/* Sidebar Header */}
+          <div className="flex items-center mb-6 pb-4 border-b-2 border-blue-200">
+            {!isCollapsed ? (
+              <div className="flex items-center gap-3 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-2xl px-4 py-3 shadow-lg border border-blue-200">
+                <div className="p-2 bg-white/60 rounded-xl shadow-inner">
+                  <Stethoscope className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-blue-800">CureCast</h2>
+                  <p className="text-xs text-blue-600 font-medium">Health Navigation</p>
+                </div>
+              </div>
+            ) : (
+              <div className="mx-auto p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl shadow-lg border border-blue-200">
+                <Stethoscope className="h-6 w-6 text-blue-600" />
+              </div>
+            )}
           </div>
 
-          {/* Auth button */}
-          <div className="flex items-center gap-2">
+          {/* Navigation Items */}
+          <div className="flex-1 space-y-2 overflow-y-auto">
+            {navItems.map((item, index) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: index * 0.05 + 0.1 }}
+                >
+                  <Button
+                    variant="ghost"
+                    className={cn(
+                      "w-full transition-all duration-300 hover:bg-white/60 rounded-2xl shadow-sm hover:shadow-md hover:scale-[1.02] mb-2",
+                      isCollapsed ? "justify-center p-3" : "justify-start p-4",
+                      isActive && "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-l-4 border-blue-600 shadow-lg ring-2 ring-blue-200"
+                    )}
+                    onClick={() => handlePageChange(item.path)}
+                    title={isCollapsed ? item.label : undefined}
+                  >
+                    <div className={`rounded-xl p-3 transition-all duration-300 ${
+                      isActive 
+                        ? `${item.color} shadow-md ring-2 ring-blue-200` 
+                        : 'bg-white/70 hover:bg-white shadow-inner'
+                    } ${isCollapsed ? '' : 'mr-4'}`}>
+                      <item.icon className={`h-5 w-5 ${isActive ? '' : 'text-gray-600'}`} />
+                    </div>
+                    {!isCollapsed && (
+                      <div className="flex-1 text-left">
+                        <span className="font-semibold text-sm">{item.label}</span>
+                        {isActive && <div className="text-xs text-blue-600 font-medium mt-1">Active</div>}
+                      </div>
+                    )}
+                  </Button>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Auth Section */}
+          <div className="mt-auto pt-4 border-t-2 border-blue-200">
             {isLoggedIn ? (
               <Button
                 variant="ghost"
-                size="sm"
-                onClick={onLogoutClick}
-                className="flex items-center gap-2"
+                className={cn(
+                  "w-full transition-all duration-300 hover:bg-red-50 text-red-600 rounded-2xl hover:shadow-lg hover:scale-[1.02] bg-white/60 shadow-sm border border-red-200",
+                  isCollapsed ? "justify-center p-3" : "justify-start p-4"
+                )}
+                onClick={() => {
+                  onLogoutClick?.();
+                }}
+                title={isCollapsed ? "Sign Out" : undefined}
               >
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
+                <div className="rounded-xl p-3 bg-gradient-to-br from-red-100 to-pink-100 shadow-md ring-2 ring-red-200">
+                  <LogOut className="h-5 w-5" />
+                </div>
+                {!isCollapsed && (
+                  <div className="ml-4 text-left">
+                    <span className="font-semibold text-sm">Sign Out</span>
+                    <div className="text-xs text-red-500 font-medium mt-1">Logout securely</div>
+                  </div>
+                )}
               </Button>
             ) : (
               <Button
                 variant="ghost"
-                size="sm"
-                onClick={onLoginClick}
-                className="flex items-center gap-2"
+                className={cn(
+                  "w-full transition-all duration-300 hover:bg-green-50 text-green-600 rounded-2xl hover:shadow-lg hover:scale-[1.02] bg-white/60 shadow-sm border border-green-200",
+                  isCollapsed ? "justify-center p-3" : "justify-start p-4"
+                )}
+                onClick={() => {
+                  onLoginClick?.();
+                }}
+                title={isCollapsed ? "Sign In" : undefined}
               >
-                <LogIn className="h-4 w-4" />
-                <span>Sign In</span>
+                <div className="rounded-xl p-3 bg-gradient-to-br from-green-100 to-emerald-100 shadow-md ring-2 ring-green-200">
+                  <LogIn className="h-5 w-5" />
+                </div>
+                {!isCollapsed && (
+                  <div className="ml-4 text-left">
+                    <span className="font-semibold text-sm">Sign In</span>
+                    <div className="text-xs text-green-500 font-medium mt-1">Access your account</div>
+                  </div>
+                )}
               </Button>
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Mobile Bottom Navigation - with animations and toggle button */}
+      {/* Mobile Bottom Navigation */}
       <motion.div 
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-[90] md:hidden"
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-white via-blue-50 to-indigo-50 border-t-2 border-blue-200 shadow-2xl z-[90] backdrop-blur-lg"
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
       >
-        <div className="flex justify-around items-center py-2">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-indigo-500/5 to-purple-500/5"></div>
+        <div className="relative flex justify-around items-center py-3">
           {[
             navItems.find(item => item.id === 'dashboard'),
             navItems.find(item => item.id === 'chat'),
@@ -119,13 +220,13 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`flex flex-col items-center py-2 px-1 ${location.pathname === item.path ? 'text-primary-600' : 'text-gray-600'}`}
+                  className={`flex flex-col items-center py-2 px-2 rounded-xl transition-all duration-300 hover:scale-105 ${location.pathname === item.path ? 'text-primary-600 bg-gradient-to-br from-blue-100 to-indigo-100 shadow-lg' : 'text-gray-600 hover:bg-white/60'}`}
                   onClick={() => handlePageChange(item.path)}
                 >
-                  <div className={`rounded-full p-1.5 mb-1 ${location.pathname === item.path ? item.color : 'bg-transparent'}`}>
+                  <div className={`rounded-xl p-2 mb-1 transition-all duration-300 ${location.pathname === item.path ? `${item.color} shadow-md ring-2 ring-blue-200` : 'bg-white/50 hover:bg-white/80'}`}>
                     <item.icon className={`h-5 w-5 ${location.pathname === item.path ? '' : 'text-gray-500'}`} />
                   </div>
-                  <span className="text-xs font-medium">{item.label}</span>
+                  <span className="text-xs font-semibold">{item.label}</span>
                 </Button>
               </motion.div>
             ))}
@@ -140,268 +241,139 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
               variant="ghost"
               size="sm"
               onClick={() => setIsOpen(!isOpen)}
-              className="flex flex-col items-center py-2 px-1 text-gray-600"
+              className="flex flex-col items-center py-2 px-2 text-gray-600 rounded-xl transition-all duration-300 hover:scale-105 hover:bg-white/60"
             >
-              <div className={`rounded-full p-1.5 mb-1 ${isOpen ? 'bg-primary-100' : 'bg-transparent'}`}>
+              <div className={`rounded-xl p-2 mb-1 transition-all duration-300 ${isOpen ? 'bg-gradient-to-br from-red-100 to-pink-100 shadow-md ring-2 ring-red-200' : 'bg-white/50 hover:bg-white/80'}`}>
                 {isOpen ? 
-                  <X className="h-5 w-5 text-primary-600" /> : 
+                  <X className="h-5 w-5 text-red-600" /> : 
                   <Menu className="h-5 w-5 text-gray-500" />
                 }
               </div>
-              <span className="text-xs font-medium">{isOpen ? 'Close' : 'Menu'}</span>
+              <span className="text-xs font-semibold">{isOpen ? 'Close' : 'Menu'}</span>
             </Button>
           </motion.div>
         </div>
       </motion.div>
       
-      {/* Sidebar for both mobile and desktop - with animations */}
+      {/* Mobile Sidebar - only shows when menu is opened */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && isMobile && (
           <>
             {/* Overlay for mobile when sidebar is open */}
-            {isMobile && (
-              <motion.div
-                className="fixed inset-0 bg-black bg-opacity-40 z-[80]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                onClick={() => setIsOpen(false)}
-                aria-label="Close sidebar overlay"
-              />
-            )}
+            <motion.div
+              className="fixed inset-0 bg-black bg-opacity-40 z-[80]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsOpen(false)}
+              aria-label="Close sidebar overlay"
+            />
             <motion.div 
-              className={cn(
-                "fixed bg-white border-r border-gray-200 shadow-lg z-[90]",
-                isMobile ? "inset-0" : "top-16 left-0 bottom-0 w-64"
-              )}
-              initial={isMobile ? { opacity: 0 } : { x: -100, opacity: 0 }}
-              animate={isMobile ? { opacity: 1 } : { x: 0, opacity: 1 }}
-              exit={isMobile ? { opacity: 0 } : { x: -100, opacity: 0 }}
+              className="fixed inset-0 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 shadow-2xl z-[90] backdrop-blur-xl"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
-              style={{ position: 'fixed' }}
             >
-              <div className="flex flex-col p-4 space-y-2 h-full overflow-y-auto">
-                {/* Sidebar header with toggle button for both mobile and desktop */}
-                <div className="flex items-center justify-between mb-6 border-b pb-4">
-                  <div className="flex items-center gap-2 bg-primary-50 rounded-lg px-3 py-2 relative" style={{minWidth: '0'}}>
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary-600 rounded-l-lg" style={{minHeight: '100%'}} />
-                    <Stethoscope className="h-6 w-6 text-primary-600 relative z-10" />
-                    <h2 className="text-xl font-semibold text-primary-800 relative z-10" style={{letterSpacing: '0.01em'}}>CureCast</h2>
+              <div className="flex flex-col p-6 space-y-3 h-full overflow-y-auto">
+                {/* Mobile Sidebar header */}
+                <div className="flex items-center justify-between mb-8 border-b-2 border-blue-200 pb-6">
+                  <div className="flex items-center gap-3 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-2xl px-4 py-3 shadow-lg border border-blue-200">
+                    <div className="p-2 bg-white/60 rounded-xl shadow-inner">
+                      <Stethoscope className="h-7 w-7 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-blue-800">CureCast</h2>
+                      <p className="text-xs text-blue-600 font-medium">Health Navigation</p>
+                    </div>
                   </div>
                   <Button 
                     variant="ghost" 
                     size="icon"
                     onClick={() => setIsOpen(false)}
-                    className="hover:bg-gray-100 rounded-full"
+                    className="hover:bg-red-100 rounded-xl p-2 transition-all duration-300 hover:scale-105 bg-white/60 shadow-md border border-red-200"
                     aria-label="Close sidebar"
                   >
-                    <X className="h-5 w-5" />
+                    <X className="h-5 w-5 text-red-600" />
                   </Button>
                 </div>
                 
-                {/* Navigation items with staggered animation */}
-                <div className="space-y-1.5">
-                  {/* Main navigation items */}
-                  {navItems
-                    .filter(item => !['architecture'].includes(item.id))
-                    .map((item, index) => {
-                      // Handle about section (for architecture)
-                      if (item.id === 'profile') {
-                        const aboutItem = {
-                          id: 'about',
-                          path: '/about',
-                          label: 'About',
-                          icon: Info,
-                          color: 'text-gray-600 bg-gray-100'
-                        };
-                        
-                        return (
-                          <React.Fragment key={item.id}>
-                            <motion.div
-                              initial={{ x: -20, opacity: 0 }}
-                              animate={{ x: 0, opacity: 1 }}
-                              transition={{ delay: index * 0.05 }}
-                            >
-                              <NavSubmenu 
-                                parentItem={aboutItem}
-                                childItems={[
-                                  navItems.find(i => i.id === 'architecture')!
-                                ]}
-                                onNavigate={handlePageChange}
-                              />
-                            </motion.div>
-                            
-                            <motion.div
-                              initial={{ x: -20, opacity: 0 }}
-                              animate={{ x: 0, opacity: 1 }}
-                              transition={{ delay: (index + 1) * 0.05 }}
-                            >
-                              <Button
-                                variant={location.pathname === item.path ? "default" : "ghost"}
-                                size="sm"
-                                className={`flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg ${location.pathname === item.path ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
-                                onClick={() => handlePageChange(item.path)}
-                              >
-                                <div className={`rounded-full p-1.5 ${location.pathname === item.path ? 'bg-white bg-opacity-20' : item.color}`}>
-                                  <item.icon className={`h-5 w-5 ${location.pathname === item.path ? 'text-white' : ''}`} />
-                                </div>
-                                <span className="font-medium">{item.label}</span>
-                              </Button>
-                            </motion.div>
-                          </React.Fragment>
-                        );
-                      }
-                      
-                      // Regular item
-                      return (
-                        <motion.div
-                          key={item.id}
-                          initial={{ x: -20, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: index * 0.05 }}
+                {/* Mobile Navigation items */}
+                <div className="space-y-2">
+                  {navItems.map((item, index) => {
+                    const isActive = location.pathname === item.path;
+                    return (
+                      <motion.div
+                        key={item.id}
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: index * 0.05 + 0.1 }}
+                      >
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start p-4 text-left transition-all duration-300 hover:bg-white/60 rounded-2xl mb-2 shadow-sm hover:shadow-md hover:scale-[1.02]",
+                            isActive && "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 border-l-4 border-blue-600 shadow-lg ring-2 ring-blue-200"
+                          )}
+                          onClick={() => handlePageChange(item.path)}
                         >
-                          <Button
-                            variant={location.pathname === item.path ? "default" : "ghost"}
-                            size="sm"
-                            className={`flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg ${location.pathname === item.path ? "bg-primary-600 text-white" : "text-gray-600 hover:bg-gray-100"}`}
-                            onClick={() => handlePageChange(item.path)}
-                          >
-                            <div className={`rounded-full p-1.5 ${location.pathname === item.path ? 'bg-white bg-opacity-20' : item.color}`}>
-                              <item.icon className={`h-5 w-5 ${location.pathname === item.path ? 'text-white' : ''}`} />
-                            </div>
-                            <span className="font-medium">{item.label}</span>
-                          </Button>
-                        </motion.div>
-                      );
-                    })}
+                          <div className={`rounded-xl p-3 mr-4 transition-all duration-300 ${isActive ? `${item.color} shadow-md ring-2 ring-blue-200` : 'bg-white/70 hover:bg-white shadow-inner'}`}>
+                            <item.icon className={`h-6 w-6 ${isActive ? '' : 'text-gray-600'}`} />
+                          </div>
+                          <div>
+                            <span className="font-semibold text-base">{item.label}</span>
+                            {isActive && <div className="text-xs text-blue-600 font-medium mt-1">Active</div>}
+                          </div>
+                        </Button>
+                      </motion.div>
+                    );
+                  })}
                 </div>
                 
-                {/* Bottom section with settings and logout */}
-                {isLoggedIn && (
-                  <motion.div 
-                    className="mt-auto pt-4 border-t border-gray-200"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                  >
+                {/* Mobile Authentication section */}
+                <div className="mt-auto pt-6 border-t-2 border-blue-200">
+                  {isLoggedIn ? (
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="flex items-center gap-3 py-3 px-3 w-full justify-start rounded-lg text-gray-600 hover:bg-gray-100"
-                      onClick={() => handlePageChange('/settings')}
+                      className="w-full justify-start p-4 text-left hover:bg-red-50 text-red-600 rounded-2xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] bg-white/60 shadow-sm border border-red-200"
+                      onClick={() => {
+                        onLogoutClick?.();
+                        setIsOpen(false);
+                      }}
                     >
-                      <div className="rounded-full p-1.5 text-gray-600 bg-gray-100">
-                        <Settings className="h-5 w-5" />
+                      <div className="rounded-xl p-3 mr-4 bg-gradient-to-br from-red-100 to-pink-100 shadow-md ring-2 ring-red-200">
+                        <LogOut className="h-6 w-6" />
                       </div>
-                      <span className="font-medium">Settings</span>
+                      <div>
+                        <span className="font-semibold text-base">Sign Out</span>
+                        <div className="text-xs text-red-500 font-medium mt-1">Logout securely</div>
+                      </div>
                     </Button>
-                  </motion.div>
-                )}
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start p-4 text-left hover:bg-green-50 text-green-600 rounded-2xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] bg-white/60 shadow-sm border border-green-200"
+                      onClick={() => {
+                        onLoginClick?.();
+                        setIsOpen(false);
+                      }}
+                    >
+                      <div className="rounded-xl p-3 mr-4 bg-gradient-to-br from-green-100 to-emerald-100 shadow-md ring-2 ring-green-200">
+                        <LogIn className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-base">Sign In</span>
+                        <div className="text-xs text-green-500 font-medium mt-1">Access your account</div>
+                      </div>
+                    </Button>
+                  )}
+                </div>
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
-      
-      {/* Mini sidebar when collapsed on desktop */}
-      {!isOpen && !isMobile && (
-        <motion.div 
-          className="fixed top-16 left-0 bottom-0 w-16 bg-white border-r border-gray-200 shadow-sm z-[90] py-4 overflow-y-auto"
-          initial={{ x: -50, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          {/* Collapse/Expand button at the top of mini sidebar */}
-          <div className="flex justify-center mb-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(true)}
-              className="rounded-full hover:bg-gray-100 mb-2 animate-pulse shadow-lg border-2 border-primary-200"
-              title="Expand sidebar"
-              aria-label="Expand sidebar"
-            >
-              <ChevronRight className="h-5 w-5 text-primary-600 drop-shadow-glow" />
-            </Button>
-          </div>
-          
-          <div className="flex flex-col items-center space-y-4">
-            {/* Display all main navigation items */}
-            {navItems
-              .filter(item => !['architecture'].includes(item.id))
-              .map((item, index) => {
-                // For About items, add a visual indicator that they have submenus
-                const hasSubmenu = item.id === 'profile';
-                const isSubmenuActive = 
-                  (item.id === 'profile' && location.pathname === '/about/architecture');
-                
-                return (
-                  <motion.div
-                    key={item.id}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="relative group"
-                  >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handlePageChange(item.path)}
-                      className={`rounded-full ${location.pathname === item.path || isSubmenuActive ? item.color : 'hover:bg-gray-100'}`}
-                      title={item.label}
-                    >
-                      <item.icon className={`h-5 w-5 ${location.pathname === item.path || isSubmenuActive ? '' : 'text-gray-500'}`} />
-                    </Button>
-                    
-                    {/* Tooltip */}
-                    <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
-                      {item.label}
-                    </div>
-                    
-                    {/* Submenu indicator */}
-                    {hasSubmenu && (
-                      <div className="absolute -right-1 -bottom-1 h-2 w-2 bg-primary-500 rounded-full"></div>
-                    )}
-                  </motion.div>
-                );
-              })}
-              
-            {/* Add divider for submenu items */}
-            <div className="w-8 border-t border-gray-200 my-2"></div>
-            
-            {/* Display architecture submenu item directly in mini sidebar */}
-            {[
-              navItems.find(i => i.id === 'architecture')
-            ]
-              .filter(Boolean)
-              .map((item, index) => (
-                <motion.div
-                  key={item!.id}
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: (index + navItems.length) * 0.05 }}
-                  className="relative group"
-                >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handlePageChange(item!.path)}
-                    className={`rounded-full ${location.pathname === item!.path ? item!.color : 'hover:bg-gray-100'}`}
-                    title={item!.label}
-                  >
-                    {React.createElement(item!.icon, { className: `h-5 w-5 ${location.pathname === item!.path ? '' : 'text-gray-500'}` })}
-                  </Button>
-                  
-                  {/* Tooltip */}
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50">
-                    {item!.label}
-                  </div>
-                </motion.div>
-              ))}
-          </div>
-        </motion.div>
-      )}
     </>
   );
 };

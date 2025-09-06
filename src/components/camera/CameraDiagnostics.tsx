@@ -1323,12 +1323,16 @@ Please try again or contact support if this issue persists.`);
   };
 
   return (
-    <div className={`${standalone ? 'container mx-auto p-4 space-y-6' : 'space-y-4'} bg-white`}>
+    <div className={`container mx-auto ${standalone ? 'p-4 space-y-6' : 'p-0 space-y-4'}`}>
       {standalone && (
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-primary">Camera Diagnostics</h2>
-            <p className="text-muted-foreground">Analyze visible symptoms through photos</p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Camera Diagnostics</h2>
+            <p className="text-lg text-gray-600">Upload or capture images for AI-powered medical analysis</p>
+            <div className="flex items-center gap-2 text-sm text-emerald-600">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span>AI-powered analysis ready</span>
+            </div>
           </div>
         </div>
       )}
@@ -1339,12 +1343,17 @@ Please try again or contact support if this issue persists.`);
           <Card className="overflow-hidden border border-gray-200">
             <CardHeader className="bg-gradient-to-r from-primary-50 to-primary-100 p-4">
               <CardTitle className="text-lg">
-                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                  <TabsList className="grid grid-cols-2 w-full">
-                    <TabsTrigger value="camera" className="w-full">Use Camera</TabsTrigger>
-                    <TabsTrigger value="upload" className="w-full">Upload Photo</TabsTrigger>
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabValue)} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-emerald-100 to-teal-100 p-1 rounded-xl">
+                    <TabsTrigger value="camera" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-emerald-600 rounded-lg transition-all duration-300">
+                      <Camera className="h-4 w-4" />
+                      Camera
+                    </TabsTrigger>
+                    <TabsTrigger value="upload" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-emerald-600 rounded-lg transition-all duration-300">
+                      <Upload className="h-4 w-4" />
+                      Upload
+                    </TabsTrigger>
                   </TabsList>
-                
                   <TabsContent value="camera" className="mt-4">
                     {!capturedImage ? (
                       <div className="relative bg-gray-100 rounded-lg overflow-hidden aspect-video flex items-center justify-center min-h-[300px]">
@@ -1356,14 +1365,14 @@ Please try again or contact support if this issue persists.`);
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-                        <Button 
-                          onClick={captureImage}
+                          <Button 
+                            onClick={captureImage}
                             className="bg-primary-600 hover:bg-primary-700"
                             size="lg"
-                        >
+                          >
                             <Camera className="mr-2 h-5 w-5" />
                             Capture
-                        </Button>
+                          </Button>
                         </div>
                         <canvas ref={canvasRef} className="hidden" />
                       </div>
@@ -1496,15 +1505,21 @@ Please try again or contact support if this issue persists.`);
           
           {analysisResult && !isAnalyzing && (
             <Card className="mt-4 border border-primary-200 shadow-sm">
-              <CardHeader className="bg-primary-50 pb-2 border-b border-primary-100">
-                <CardTitle className="flex items-center text-primary-700 text-lg">
-                  <MessageSquare className="mr-2 h-5 w-5 text-primary-600" />
-                  AI Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 overflow-auto max-h-[500px]">
-                <AnalysisResults analysisText={analysisResult} />
-              </CardContent>
+              <TabsContent value="camera" className="space-y-6">
+                <Card className="border-2 border-emerald-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-t-lg">
+                    <CardTitle className="flex items-center gap-3">
+                      <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm">
+                        <Camera className="h-5 w-5 text-white" />
+                      </div>
+                      Camera Capture
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <AnalysisResults analysisText={analysisResult} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </Card>
           )}
         </div>

@@ -8,8 +8,7 @@ import CameraDiagnostics from '@/components/camera/CameraDiagnostics';
 import DiabetesChecker from '@/components/health/DiabetesChecker';
 import BloodPressureChecker from '@/components/health/BloodPressureChecker';
 import SkinDiseaseChecker from '@/components/health/SkinDiseaseChecker';
-import PopularUseCases from '@/components/health/PopularUseCases';
-import AIDisclaimer from '@/components/ui/AIDisclaimer';
+import { NavigationChatbot } from './components/chatbot/NavigationChatbot';
 import ArchitecturePage from '@/pages/ArchitecturePage';
 import Navbar from '@/components/ui/navbar';
 import './App.css';
@@ -212,101 +211,98 @@ const App: React.FC = () => {
   const renderDashboard = () => {
     return (
       <div className="animate-fade-in space-y-12">
-        {/* Hero Section with animated gradient background */}
-        <div className="relative overflow-hidden rounded-3xl shadow-2xl bg-gradient-to-r from-blue-500 via-primary-500 to-purple-500 p-8 md:p-12">
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute inset-0 bg-[url('/pattern-dots.svg')] bg-repeat"></div>
-          </div>
-          <div className="relative z-10 text-center space-y-6 max-w-3xl mx-auto py-8 md:py-12">
-            <div className="inline-flex items-center justify-center p-3 bg-white/20 rounded-full backdrop-blur-sm mb-4">
-              <Stethoscope className="h-10 w-10 text-white" />
+        {/* Hero Section - Modern Professional Design */}
+        <div className="relative overflow-hidden bg-white rounded-3xl shadow-xl border border-gray-100">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-blue-50/30 to-indigo-50/50"></div>
+          <div className="relative z-10 px-8 py-16 md:px-16 md:py-24">
+            <div className="max-w-4xl mx-auto text-center space-y-8">
+              <div className="inline-flex items-center justify-center p-4 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-3xl shadow-2xl mb-8">
+                <Stethoscope className="h-16 w-16 text-white" />
+              </div>
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 leading-tight">
+                Your <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">AI Health</span> Companion
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                Experience the future of healthcare with intelligent diagnostics, personalized guidance, and 24/7 medical support powered by advanced AI technology.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
+                <button 
+                  onClick={() => handleFeatureAccess('/chat')}
+                  className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-blue-600 text-white rounded-2xl font-semibold text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-3"
+                >
+                  Start Health Consultation
+                  <ArrowRight className="h-5 w-5" />
+                </button>
+                <button 
+                  onClick={openVoiceInterface}
+                  className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center gap-3"
+                >
+                  <Mic className="h-5 w-5" />
+                  Voice Assistant
+                </button>
+              </div>
             </div>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white drop-shadow-md">Your Health Companion</h2>
-            <p className="text-xl md:text-2xl text-white/90">
-              CureCast offers healthcare guidance, resources, and support designed for everyone
-            </p>
           </div>
           
-          {/* Animated wave effect at bottom */}
-          <div className="absolute bottom-0 left-0 right-0">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" className="w-full">
-              <path fill="#ffffff" fillOpacity="1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,208C672,213,768,203,864,181.3C960,160,1056,128,1152,117.3C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-            </svg>
-          </div>
+          {/* Decorative elements */}
+          <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br from-emerald-200/30 to-blue-200/30 rounded-full blur-2xl"></div>
+          <div className="absolute bottom-10 left-10 w-24 h-24 bg-gradient-to-br from-blue-200/30 to-indigo-200/30 rounded-full blur-2xl"></div>
         </div>
 
-        {/* Main Features - Card Grid with more vibrant styling */}
+        {/* Core Services - Professional Grid Layout */}
         <div>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-10 w-2 bg-primary-500 rounded-full"></div>
-            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary-600 to-blue-600 text-transparent bg-clip-text">Main Features</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Core Health Services</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Comprehensive AI-powered healthcare solutions at your fingertips</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Dr. CureCast AI Card */}
-            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
-              <div className="relative h-full bg-gradient-to-br from-primary-600 to-primary-400 rounded-2xl p-6 shadow-xl overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
-                <div className="absolute -right-8 -top-8 w-32 h-32 bg-primary-300 rounded-full opacity-30"></div>
-                <div className="relative z-10">
-                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                    <Stethoscope className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Dr. CureCast AI</h3>
-                  <p className="text-white/80 mb-6">Get instant health guidance and expert advice for your concerns</p>
-                  <button 
-                    onClick={() => handleFeatureAccess('/chat')}
-                    className="px-6 py-3 bg-white text-primary-600 rounded-xl hover:bg-primary-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
-                  >
-                    Chat Now
-                    {!isLoggedIn ? <LogIn className="h-4 w-4" /> : <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
-                  </button>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* AI Consultation Card */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Stethoscope className="h-8 w-8 text-white" />
               </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">AI Health Consultation</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">Get instant, personalized health guidance from our advanced AI doctor trained on medical expertise</p>
+              <button 
+                onClick={() => handleFeatureAccess('/chat')}
+                className="w-full px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white rounded-xl font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                Start Consultation
+                {!isLoggedIn ? <LogIn className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+              </button>
             </div>
 
-            {/* Voice Interface Card */}
-            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
-              <div className="relative h-full bg-gradient-to-br from-blue-600 to-blue-400 rounded-2xl p-6 shadow-xl overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
-                <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-300 rounded-full opacity-30"></div>
-                <div className="relative z-10">
-                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                    <Mic className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Voice Interface</h3>
-                  <p className="text-white/80 mb-6">Speak naturally with our AI in your preferred language</p>
-                  <button 
-                    onClick={openVoiceInterface}
-                    className="px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
-                  >
-                    Start Speaking
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </button>
-                </div>
+            {/* Voice Assistant Card */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Mic className="h-8 w-8 text-white" />
               </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Voice Assistant</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">Speak naturally about your health concerns in multiple languages with voice recognition</p>
+              <button 
+                onClick={openVoiceInterface}
+                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                Start Speaking
+                <Mic className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Camera Diagnostics Card */}
-            <div className="group h-full transform transition-all duration-300 hover:-translate-y-2">
-              <div className="relative h-full bg-gradient-to-br from-emerald-600 to-emerald-400 rounded-2xl p-6 shadow-xl overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-2xl"></div>
-                <div className="absolute -right-8 -top-8 w-32 h-32 bg-emerald-300 rounded-full opacity-30"></div>
-                <div className="relative z-10">
-                  <div className="w-16 h-16 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                    <Camera className="h-8 w-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Camera Diagnostics</h3>
-                  <p className="text-white/80 mb-6">Upload or take photos for instant medical analysis</p>
-                  <button 
-                    onClick={openCameraInterface}
-                    className="px-6 py-3 bg-white text-emerald-600 rounded-xl hover:bg-emerald-50 transition-colors duration-200 flex items-center gap-2 font-medium shadow-lg group-hover:shadow-xl"
-                  >
-                    Analyze Image
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </button>
-                </div>
+            <div className="group bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Camera className="h-8 w-8 text-white" />
               </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Visual Diagnostics</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">Upload or capture images for AI-powered medical analysis and instant insights</p>
+              <button 
+                onClick={openCameraInterface}
+                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-purple-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                Analyze Image
+                <Camera className="h-4 w-4" />
+              </button>
             </div>
           </div>
           
@@ -432,9 +428,6 @@ const App: React.FC = () => {
           </div>
         </div>
         
-        {/* Popular Use Cases Section */}
-        <PopularUseCases />
-        
         {/* Health Facts Carousel - Dynamic and Interactive */}
         <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-3xl p-8 shadow-lg">
           <div className="flex items-center gap-3 mb-6">
@@ -545,48 +538,60 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 relative">
       {/* App Header */}
-      <header className="sticky top-0 left-0 right-0 z-[100] bg-gradient-to-r from-primary-600 via-primary-500 to-indigo-600 shadow-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <Stethoscope className="h-8 w-8 text-white drop-shadow" />
+      <header className="sticky top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-xl border-b border-gray-200/50 shadow-lg h-[70px]">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/30 via-blue-50/30 to-indigo-50/30"></div>
+        <div className="relative max-w-7xl mx-auto flex items-center justify-between px-8 h-full">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="h-12 w-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl ring-4 ring-emerald-100/50 hover:scale-105 transition-all duration-300">
+                <Stethoscope className="h-7 w-7 text-white drop-shadow-sm" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
             </div>
-            <div>
-              <h1 className="text-2xl font-extrabold text-white tracking-wide drop-shadow">Dr.CureCast</h1>
-              <p className="text-xs text-white/80">Excellence in AI Health Guidance</p>
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                Dr.CureCast
+              </h1>
+              <p className="text-sm text-gray-600 font-medium">AI-Powered Health Intelligence</p>
             </div>
           </div>
 
           <div className="flex items-center gap-4">
             {user?.name && (
-              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-5 py-2 rounded-xl shadow-lg text-white">
-                <div className="h-8 w-8 bg-white/30 rounded-full flex items-center justify-center">
-                  <User className="h-5 w-5" />
+              <div className="flex items-center gap-3 bg-gray-50/80 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-gray-200/50 shadow-sm hover:shadow-md transition-all duration-300">
+                <div className="h-9 w-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-sm">
+                  <User className="h-5 w-5 text-white" />
                 </div>
-                <span className="capitalize font-medium">{user.name}</span>
+                <div>
+                  <span className="capitalize font-semibold text-sm text-gray-900 block">{user.name}</span>
+                  <span className="text-xs text-gray-500">Premium Member</span>
+                </div>
               </div>
             )}
-            <div className="hidden md:block text-right">
-              <span className="text-xs text-white/70 block">Developed by</span>
-              <span className="text-sm text-white font-medium">Raghava Annala</span>
+            <div className="hidden lg:flex items-center gap-2 text-right bg-gray-50/60 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-gray-200/50">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+              <div>
+                <span className="text-xs text-gray-500 block">Developed by</span>
+                <span className="text-sm text-gray-900 font-semibold">Raghava Annala</span>
+              </div>
             </div>
             {/* Sign in/out button */}
             {isLoggedIn ? (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                className="text-white hover:bg-white/10"
+                className="bg-white/80 hover:bg-red-50 border-gray-200 text-gray-700 hover:text-red-600 hover:border-red-200 px-4 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 font-medium"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Sign Out
               </Button>
             ) : (
               <Button
-                variant="ghost"
+                variant="default"
                 size="sm"
                 onClick={handleLoginClick}
-                className="text-white hover:bg-white/10"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 font-medium"
               >
                 <LogIn className="h-4 w-4 mr-2" />
                 Sign In
@@ -673,7 +678,7 @@ const App: React.FC = () => {
       </Dialog>
       
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8 md:pl-72 pt-20">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20 md:pb-8 pt-[90px] transition-all duration-300 md:ml-20">
         <Routes>
           <Route path="/" element={renderDashboard()} />
           <Route path="/chat" element={
@@ -699,8 +704,15 @@ const App: React.FC = () => {
       
       {/* Global AI Disclaimer Footer */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-amber-50 to-orange-50 border-t border-amber-200 py-2 px-4 shadow-md">
-        <AIDisclaimer variant="compact" className="max-w-6xl mx-auto" />
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-xs text-amber-700">
+            ⚠️ This AI assistant provides general health information only. Always consult healthcare professionals for medical advice.
+          </p>
+        </div>
       </div>
+
+      {/* Navigation Chatbot */}
+      <NavigationChatbot />
     </div>
   );
 };
