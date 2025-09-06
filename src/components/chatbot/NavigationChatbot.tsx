@@ -21,7 +21,9 @@ import {
   Scan,
   ChevronDown,
   Play,
-  Pause
+  Pause,
+  Move,
+  Languages
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -122,10 +124,14 @@ export const NavigationChatbot: React.FC = () => {
   const [currentLanguage, setCurrentLanguage] = useState<Language>(SUPPORTED_LANGUAGES[0]);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [buttonPosition, setButtonPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 100 });
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const synthesisRef = useRef<SpeechSynthesis | null>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   
   // Initialize Gemini AI
@@ -430,32 +436,147 @@ export const NavigationChatbot: React.FC = () => {
   const handleLanguageChange = (language: Language) => {
     setCurrentLanguage(language);
     setShowLanguageSelector(false);
-    addBotMessage(`Language changed to ${language.nativeName}. How can I help you?`);
+    const changeMessage = {
+      en: `Language changed to ${language.nativeName}. How can I help you?`,
+      hi: `भाषा ${language.nativeName} में बदल दी गई। मैं आपकी कैसे सहायता कर सकता हूं?`,
+      or: `ଭାଷା ${language.nativeName} ରେ ପରିବର୍ତ୍ତନ କରାଗଲା। ମୁଁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?`,
+      bn: `ভাষা ${language.nativeName} এ পরিবর্তন করা হয়েছে। আমি কীভাবে সাহায্য করতে পারি?`,
+      te: `భాష ${language.nativeName} కు మార్చబడింది. నేను ఎలా సహాయం చేయగలను?`,
+      ta: `மொழி ${language.nativeName} க்கு மாற்றப்பட்டது. நான் எப்படி உதவ முடியும்?`,
+      mr: `भाषा ${language.nativeName} मध्ये बदलली. मी कशी मदत करू शकतो?`,
+      gu: `ભાષા ${language.nativeName} માં બદલાઈ ગઈ. હું કેવી રીતે મદદ કરી શકું?`
+    };
+    addBotMessage(changeMessage[language.code as keyof typeof changeMessage] || changeMessage.en);
   };
+
+  const handleButtonMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - buttonPosition.x,
+      y: e.clientY - buttonPosition.y
+    });
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (isDragging) {
+      e.preventDefault();
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      
+      // Constrain to viewport (with padding for button size)
+      const maxX = window.innerWidth - 60; // button width
+      const maxY = window.innerHeight - 60; // button height
+      
+      setButtonPosition({
+        x: Math.max(10, Math.min(newX, maxX)),
+        y: Math.max(10, Math.min(newY, maxY))
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleButtonClick = (e: React.MouseEvent) => {
+    if (!isDragging) {
+      setIsOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragStart]);
 
   return (
     <>
       {/* Floating Chat Button */}
       <motion.button
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-gradient-to-r from-emerald-500 to-blue-600 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center justify-center"
-        onClick={() => setIsOpen(true)}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+        className={`fixed z-50 w-16 h-16 bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-600 text-white rounded-full shadow-2xl hover:shadow-3xl transition-all duration-500 flex items-center justify-center ${
+          isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'
+        }`}
+        style={{
+          left: buttonPosition.x,
+          top: buttonPosition.y,
+        }}
+        onClick={handleButtonClick}
+        onMouseDown={handleButtonMouseDown}
+        whileHover={{ 
+          scale: isDragging ? 1 : 1.15,
+          rotate: isDragging ? 0 : [0, -5, 5, 0],
+          transition: { duration: 0.3 }
+        }}
+        whileTap={{ scale: isDragging ? 1 : 0.95 }}
         animate={{ 
-          boxShadow: isOpen ? "0 0 0 0 rgba(16, 185, 129, 0)" : "0 0 0 10px rgba(16, 185, 129, 0.3)"
+          boxShadow: isOpen 
+            ? "0 0 0 0 rgba(16, 185, 129, 0)" 
+            : [
+                "0 0 0 0 rgba(16, 185, 129, 0.4)",
+                "0 0 0 15px rgba(16, 185, 129, 0.1)",
+                "0 0 0 0 rgba(16, 185, 129, 0.4)"
+              ],
+          background: [
+            "linear-gradient(45deg, #10b981, #3b82f6, #8b5cf6)",
+            "linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6)",
+            "linear-gradient(135deg, #10b981, #3b82f6, #8b5cf6)",
+            "linear-gradient(45deg, #10b981, #3b82f6, #8b5cf6)"
+          ],
+          transition: {
+            boxShadow: {
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            },
+            background: {
+              duration: 3,
+              repeat: Infinity,
+              ease: "linear"
+            }
+          }
         }}
       >
-        <MessageCircle className="h-8 w-8" />
-        <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+        <motion.div
+          animate={{
+            rotate: [0, 360],
+            transition: {
+              duration: 8,
+              repeat: Infinity,
+              ease: "linear"
+            }
+          }}
+        >
+          <MessageCircle className="h-8 w-8" />
+        </motion.div>
+        <motion.div 
+          className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center shadow-lg"
+          animate={{
+            scale: [1, 1.2, 1],
+            transition: {
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }
+          }}
+        >
           <span className="text-xs font-bold text-white">AI</span>
-        </div>
+        </motion.div>
       </motion.button>
 
       {/* Chat Interface */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed bottom-6 right-6 z-50 w-96 h-[600px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
+            ref={chatContainerRef}
+            className="fixed bottom-20 right-4 z-40 w-80 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -468,31 +589,50 @@ export const NavigationChatbot: React.FC = () => {
                   <Heart className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Health Navigator</h3>
-                  <p className="text-xs opacity-90">Multilingual AI Assistant</p>
+                  <h3 className="font-semibold flex items-center gap-2">
+                    Health Navigator
+                    <Move className="h-4 w-4 opacity-60" title="Drag to move" />
+                  </h3>
+                  <p className="text-xs opacity-90">Multilingual AI Assistant • {currentLanguage.nativeName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 {/* Language Selector */}
                 <div className="relative">
                   <button
-                    onClick={() => setShowLanguageSelector(!showLanguageSelector)}
-                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowLanguageSelector(!showLanguageSelector);
+                    }}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1"
+                    title={`Current: ${currentLanguage.nativeName} | Click to change language`}
                   >
-                    <Globe className="h-4 w-4" />
+                    <Languages className="h-4 w-4" />
+                    <span className="text-xs font-medium">{currentLanguage.code.toUpperCase()}</span>
                   </button>
                   {showLanguageSelector && (
-                    <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 min-w-48 z-10">
+                    <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-2 min-w-52 z-20 max-h-64 overflow-y-auto">
+                      <div className="px-3 py-2 text-xs font-semibold text-gray-500 border-b border-gray-100">
+                        Select Language / भाषा चुनें
+                      </div>
                       {SUPPORTED_LANGUAGES.map((lang) => (
                         <button
                           key={lang.code}
-                          onClick={() => handleLanguageChange(lang)}
-                          className={`w-full text-left px-4 py-2 hover:bg-gray-100 transition-colors ${
-                            currentLanguage.code === lang.code ? 'bg-emerald-50 text-emerald-600' : 'text-gray-700'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLanguageChange(lang);
+                          }}
+                          className={`w-full text-left px-4 py-3 hover:bg-gray-100 transition-colors flex items-center justify-between ${
+                            currentLanguage.code === lang.code ? 'bg-emerald-50 text-emerald-600 border-l-4 border-emerald-500' : 'text-gray-700'
                           }`}
                         >
-                          <div className="font-medium">{lang.nativeName}</div>
-                          <div className="text-xs opacity-60">{lang.name}</div>
+                          <div>
+                            <div className="font-medium text-sm">{lang.nativeName}</div>
+                            <div className="text-xs opacity-60">{lang.name}</div>
+                          </div>
+                          <div className="text-xs font-mono bg-gray-100 px-2 py-1 rounded">
+                            {lang.code.toUpperCase()}
+                          </div>
                         </button>
                       ))}
                     </div>
