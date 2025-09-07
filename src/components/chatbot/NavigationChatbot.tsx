@@ -142,6 +142,22 @@ export const NavigationChatbot: React.FC = () => {
     // Initialize speech synthesis
     if ('speechSynthesis' in window) {
       synthesisRef.current = window.speechSynthesis;
+      
+      // Load voices (they might not be available immediately)
+      const loadVoices = () => {
+        const voices = synthesisRef.current?.getVoices();
+        if (voices && voices.length > 0) {
+          console.log('Available voices:', voices.map(v => `${v.name} (${v.lang})`));
+        }
+      };
+      
+      // Load voices immediately if available
+      loadVoices();
+      
+      // Also listen for voice changes (some browsers load voices asynchronously)
+      if (synthesisRef.current.onvoiceschanged !== undefined) {
+        synthesisRef.current.onvoiceschanged = loadVoices;
+      }
     }
 
     // Initialize speech recognition
@@ -150,7 +166,7 @@ export const NavigationChatbot: React.FC = () => {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = currentLanguage.code;
+      recognitionRef.current.lang = getLanguageCode(currentLanguage.code);
 
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
@@ -159,6 +175,11 @@ export const NavigationChatbot: React.FC = () => {
       };
 
       recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onerror = (error: any) => {
+        console.error('Speech recognition error:', error);
         setIsListening(false);
       };
     }
@@ -261,15 +282,69 @@ export const NavigationChatbot: React.FC = () => {
       .trim();
   };
 
+  const getLanguageCode = (langCode: string): string => {
+    const languageMap: { [key: string]: string } = {
+      'en': 'en-US',
+      'hi': 'hi-IN',
+      'or': 'or-IN',
+      'bn': 'bn-IN',
+      'te': 'te-IN',
+      'ta': 'ta-IN',
+      'mr': 'mr-IN',
+      'gu': 'gu-IN'
+    };
+    return languageMap[langCode] || 'en-US';
+  };
+
+  const getBestVoice = (langCode: string): SpeechSynthesisVoice | null => {
+    if (!synthesisRef.current) return null;
+    
+    const voices = synthesisRef.current.getVoices();
+    const targetLang = getLanguageCode(langCode);
+    
+    // First, try to find a voice that exactly matches the language
+    let voice = voices.find(v => v.lang === targetLang);
+    
+    // If not found, try to find a voice that starts with the language code
+    if (!voice) {
+      const baseLang = targetLang.split('-')[0];
+      voice = voices.find(v => v.lang.startsWith(baseLang));
+    }
+    
+    // If still not found, try to find any voice with the base language
+    if (!voice) {
+      voice = voices.find(v => v.lang.includes(langCode));
+    }
+    
+    return voice || null;
+  };
+
   const speakText = (text: string) => {
     if (synthesisRef.current && !isSpeaking) {
       setIsSpeaking(true);
       const cleanText = cleanTextForSpeech(text);
       const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = currentLanguage.code;
+      
+      // Set language and voice
+      const targetLang = getLanguageCode(currentLanguage.code);
+      utterance.lang = targetLang;
+      
+      // Try to get the best voice for the language
+      const bestVoice = getBestVoice(currentLanguage.code);
+      if (bestVoice) {
+        utterance.voice = bestVoice;
+      }
+      
       utterance.rate = 0.8;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      
       utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onerror = (error) => {
+        console.error('Speech synthesis error:', error);
+        setIsSpeaking(false);
+      };
+      
       synthesisRef.current.speak(utterance);
     }
   };
@@ -284,8 +359,13 @@ export const NavigationChatbot: React.FC = () => {
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
       setIsListening(true);
-      recognitionRef.current.lang = currentLanguage.code;
-      recognitionRef.current.start();
+      recognitionRef.current.lang = getLanguageCode(currentLanguage.code);
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        setIsListening(false);
+      }
     }
   };
 
@@ -422,10 +502,10 @@ export const NavigationChatbot: React.FC = () => {
       addBotMessage(response);
       setIsTyping(false);
       
-      // Auto-speak the response if speech is enabled
-      if (isSpeaking) {
+      // Auto-speak the response (speak by default, unless user has disabled it)
+      setTimeout(() => {
         speakText(response);
-      }
+      }, 100);
     } catch (error) {
       console.error('Error processing message:', error);
       addBotMessage("I'm sorry, I'm having trouble processing your request right now. Please try again.");
@@ -591,7 +671,7 @@ export const NavigationChatbot: React.FC = () => {
                 <div>
                   <h3 className="font-semibold flex items-center gap-2">
                     Health Navigator
-                    <Move className="h-4 w-4 opacity-60" title="Drag to move" />
+                    <Move className="h-4 w-4 opacity-60" />
                   </h3>
                   <p className="text-xs opacity-90">Multilingual AI Assistant • {currentLanguage.nativeName}</p>
                 </div>
