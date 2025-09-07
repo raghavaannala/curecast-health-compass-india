@@ -13,10 +13,12 @@ import { NavigationChatbot } from './components/chatbot/NavigationChatbot';
 import ArchitecturePage from '@/pages/ArchitecturePage';
 import Navbar from '@/components/ui/navbar';
 import { ReminderSystem } from './components/ReminderSystem';
+import RemindersSection from './components/reminders/RemindersSection';
+import EmergencyButton from './components/emergency/EmergencyButton';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { app, auth } from './firebase';
-import { Stethoscope, MapPin, Bell, Phone, Shield, Brain, Menu, X, LogIn, ArrowRight, Camera, Globe, FileText, Mic, ChevronLeft, User, Info, Crown, LogOut, Droplet, Activity, Scan } from 'lucide-react';
+import { Stethoscope, MapPin, Bell, Phone, Shield, Brain, Menu, X, LogIn, ArrowRight, Camera, Globe, FileText, Mic, ChevronLeft, User, Info, Crown, LogOut, Droplet, Activity, Scan, MessageCircle, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -378,6 +380,21 @@ const App: React.FC = () => {
           </div>
         </div>
 
+        {/* Emergency Call Section */}
+        <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-3xl p-8 border-2 border-red-200 shadow-xl">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-red-800 mb-4">Emergency Services</h2>
+            <p className="text-lg text-red-700 max-w-2xl mx-auto">Get immediate help in medical emergencies. One-tap access to ambulance, police, and fire services with automatic location sharing.</p>
+          </div>
+          
+          <div className="max-w-md mx-auto">
+            <EmergencyButton className="mb-4" />
+            <div className="text-center text-sm text-red-600 bg-red-100 rounded-lg p-3">
+              <p className="font-semibold">Available 24/7 • Location-based dispatch • Multiple emergency services</p>
+            </div>
+          </div>
+        </div>
+
         {/* Secondary Features - More Modern and Colorful */}
         <div>
           <div className="flex items-center gap-3 mb-6">
@@ -578,6 +595,24 @@ const App: React.FC = () => {
               </div>
             </div>
             
+            {/* Communication Icons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => window.open('https://web.whatsapp.com/', '_blank')}
+                className="p-2 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 hover:border-green-300 transition-all duration-200 group"
+                title="Open WhatsApp"
+              >
+                <MessageCircle className="h-4 w-4 text-green-600 group-hover:text-green-700" />
+              </button>
+              <button
+                onClick={() => window.location.href = 'sms:'}
+                className="p-2 bg-blue-50 hover:bg-blue-100 rounded-lg border border-blue-200 hover:border-blue-300 transition-all duration-200 group"
+                title="Send SMS"
+              >
+                <Mail className="h-4 w-4 text-blue-600 group-hover:text-blue-700" />
+              </button>
+            </div>
+            
             {/* Reminder System */}
             <ReminderSystem />
             
@@ -706,6 +741,7 @@ const App: React.FC = () => {
           <Route path="/education" element={<HealthFactsPage />} />
           <Route path="/founders" element={<FoundersPage />} />
           <Route path="/dr-curecast" element={<DrCurecastSimple />} />
+          <Route path="/reminders" element={<RemindersSection userId={auth.currentUser?.uid || ''} isAuthenticated={isLoggedIn} />} />
         </Routes>
       </main>
       

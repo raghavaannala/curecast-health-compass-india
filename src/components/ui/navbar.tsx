@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, ChevronLeft, ChevronRight, Settings, LogOut, Crown, LogIn, Droplet, Activity, Scan, Server, Info } from 'lucide-react';
+import { Stethoscope, User, MessageSquare, Shield, Mic, Camera, Home, Menu, X, ChevronLeft, ChevronRight, Settings, LogOut, Crown, LogIn, Droplet, Activity, Scan, Server, Info, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -46,6 +46,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
     { id: 'founder', path: '/founders', label: 'Founders', icon: Crown, color: 'text-yellow-600 bg-yellow-100 border-2 border-yellow-400 font-bold' },
     { id: 'dashboard', path: '/', label: 'Home', icon: Home, color: 'text-blue-600 bg-blue-100' },
     { id: 'chat', path: '/chat', label: 'Dr.CureCast', icon: MessageSquare, color: 'text-emerald-600 bg-emerald-100' },
+    { id: 'reminders', path: '/reminders', label: 'Reminders', icon: Bell, color: 'text-orange-600 bg-orange-100' },
     { id: 'voice', path: '/voice', label: 'Voice', icon: Mic, color: 'text-purple-600 bg-purple-100' },
     { id: 'camera', path: '/camera', label: 'Camera', icon: Camera, color: 'text-amber-600 bg-amber-100' },
     { id: 'diabetes', path: '/health/diabetes', label: 'Diabetes', icon: Droplet, color: 'text-blue-600 bg-blue-100' },
