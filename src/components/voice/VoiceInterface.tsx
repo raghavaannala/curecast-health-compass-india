@@ -38,12 +38,32 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ standalone = true, onTr
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-  type LanguageOption = 'english' | 'hindi' | 'telugu';
-  
+  type LanguageOption = 'english' | 'hindi' | 'telugu' | 'tamil' | 'bengali' | 'marathi' | 'gujarati' | 'kannada' | 'malayalam' | 'punjabi' | 'urdu' | 'odia' | 'assamese' | 'spanish' | 'french' | 'german' | 'arabic' | 'chinese' | 'japanese' | 'russian' | 'portuguese';
+
   const languages = [
-    { value: 'english' as LanguageOption, label: 'English' },
-    { value: 'hindi' as LanguageOption, label: 'हिंदी (Hindi)' },
-    { value: 'telugu' as LanguageOption, label: 'తెలుగు (Telugu)' }
+    // Indian Languages
+    { value: 'english' as LanguageOption, label: '🇺🇸 English', code: 'en-US' },
+    { value: 'hindi' as LanguageOption, label: '🇮🇳 हिंदी (Hindi)', code: 'hi-IN' },
+    { value: 'telugu' as LanguageOption, label: '🇮🇳 తెలుగు (Telugu)', code: 'te-IN' },
+    { value: 'tamil' as LanguageOption, label: '🇮🇳 தமிழ் (Tamil)', code: 'ta-IN' },
+    { value: 'bengali' as LanguageOption, label: '🇮🇳 বাংলা (Bengali)', code: 'bn-IN' },
+    { value: 'marathi' as LanguageOption, label: '🇮🇳 मराठी (Marathi)', code: 'mr-IN' },
+    { value: 'gujarati' as LanguageOption, label: '🇮🇳 ગુજરાતી (Gujarati)', code: 'gu-IN' },
+    { value: 'kannada' as LanguageOption, label: '🇮🇳 ಕನ್ನಡ (Kannada)', code: 'kn-IN' },
+    { value: 'malayalam' as LanguageOption, label: '🇮🇳 മലയാളം (Malayalam)', code: 'ml-IN' },
+    { value: 'punjabi' as LanguageOption, label: '🇮🇳 ਪੰਜਾਬੀ (Punjabi)', code: 'pa-IN' },
+    { value: 'urdu' as LanguageOption, label: '🇮🇳 اردو (Urdu)', code: 'ur-IN' },
+    { value: 'odia' as LanguageOption, label: '🇮🇳 ଓଡ଼ିଆ (Odia)', code: 'or-IN' },
+    { value: 'assamese' as LanguageOption, label: '🇮🇳 অসমীয়া (Assamese)', code: 'as-IN' },
+    // International Languages
+    { value: 'spanish' as LanguageOption, label: '🇪🇸 Español (Spanish)', code: 'es-ES' },
+    { value: 'french' as LanguageOption, label: '🇫🇷 Français (French)', code: 'fr-FR' },
+    { value: 'german' as LanguageOption, label: '🇩🇪 Deutsch (German)', code: 'de-DE' },
+    { value: 'arabic' as LanguageOption, label: '🇸🇦 العربية (Arabic)', code: 'ar-SA' },
+    { value: 'chinese' as LanguageOption, label: '🇨🇳 中文 (Chinese)', code: 'zh-CN' },
+    { value: 'japanese' as LanguageOption, label: '🇯🇵 日本語 (Japanese)', code: 'ja-JP' },
+    { value: 'russian' as LanguageOption, label: '🇷🇺 Русский (Russian)', code: 'ru-RU' },
+    { value: 'portuguese' as LanguageOption, label: '🇵🇹 Português (Portuguese)', code: 'pt-PT' }
   ];
 
   useEffect(() => {
@@ -88,8 +108,8 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ standalone = true, onTr
       recognitionRef.current = new SpeechRecognition();
       
       // Set language based on current selection
-      recognitionRef.current.lang = selectedLanguage === 'hindi' ? 'hi-IN' : 
-                                   selectedLanguage === 'telugu' ? 'te-IN' : 'en-US';
+      const selectedLangConfig = languages.find(lang => lang.value === selectedLanguage);
+      recognitionRef.current.lang = selectedLangConfig?.code || 'en-US';
       
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;

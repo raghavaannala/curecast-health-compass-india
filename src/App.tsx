@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import GoogleSignIn from './components/GoogleSignIn';
 import DrCureCast from '@/components/chat/DrCureCast';
+import DrCurecastSimple from './components/DrCurecastSimple';
 import ProfilePage from './components/ProfilePage';
 import HealthVault from '@/components/health/HealthVault';
 import VoiceInterface from '@/components/voice/VoiceInterface';
@@ -11,6 +12,7 @@ import SkinDiseaseChecker from '@/components/health/SkinDiseaseChecker';
 import { NavigationChatbot } from './components/chatbot/NavigationChatbot';
 import ArchitecturePage from '@/pages/ArchitecturePage';
 import Navbar from '@/components/ui/navbar';
+import { ReminderSystem } from './components/ReminderSystem';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { app, auth } from './firebase';
@@ -575,6 +577,10 @@ const App: React.FC = () => {
                 <span className="text-sm text-gray-900 font-semibold">Raghava Annala</span>
               </div>
             </div>
+            
+            {/* Reminder System */}
+            <ReminderSystem />
+            
             {/* Sign in/out button */}
             {isLoggedIn ? (
               <Button
@@ -699,6 +705,7 @@ const App: React.FC = () => {
           <Route path="/voice" element={<VoiceInterface standalone={true} onTranscriptReady={handleVoiceInput} />} />
           <Route path="/education" element={<HealthFactsPage />} />
           <Route path="/founders" element={<FoundersPage />} />
+          <Route path="/dr-curecast" element={<DrCurecastSimple />} />
         </Routes>
       </main>
       
