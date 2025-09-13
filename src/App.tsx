@@ -15,7 +15,7 @@ import Navbar from '@/components/ui/navbar';
 import { ReminderSystem } from './components/ReminderSystem';
 import RemindersSection from './components/reminders/RemindersSection';
 import EmergencyButton from './components/emergency/EmergencyButton';
-import PrescriptionScanner from './components/prescription/PrescriptionScanner';
+import PrescriptionScanner from '@/components/prescription/PrescriptionScanner';
 import OutbreakAlerts from '@/components/outbreak/OutbreakAlerts';
 import OutbreakAlertBanner from '@/components/outbreak/OutbreakAlertBanner';
 import './App.css';
@@ -592,7 +592,7 @@ const App: React.FC = () => {
               <div className="h-12 w-12 bg-gradient-to-br from-emerald-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl ring-4 ring-emerald-100/50 hover:scale-105 transition-all duration-300">
                 <Stethoscope className="h-7 w-7 text-white drop-shadow-sm" />
               </div>
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full opacity-30"></div>
             </div>
             <div className="space-y-1">
               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
@@ -757,12 +757,15 @@ const App: React.FC = () => {
               onCameraInputRequest={() => setShowCameraInterface(true)}
             />
           } />
+          <Route path="/camera" element={<CameraDiagnostics />} />
+          <Route path="/voice" element={<VoiceInterface />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/health" element={<HealthVault />} />
           <Route path="/health/diabetes" element={<DiabetesChecker />} />
           <Route path="/health/blood-pressure" element={<BloodPressureChecker />} />
           <Route path="/health/skin-disease" element={<SkinDiseaseChecker />} />
           <Route path="/about/architecture" element={<ArchitecturePage />} />
+          <Route path="/founders" element={<FoundersPage />} />
           <Route path="/reminders" element={<RemindersSection userId={auth.currentUser?.uid || ''} isAuthenticated={isLoggedIn} />} />
           <Route path="/prescription-scanner" element={<PrescriptionScanner />} />
           <Route path="/outbreak-alerts" element={<OutbreakAlerts />} />
