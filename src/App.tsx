@@ -15,6 +15,9 @@ import Navbar from '@/components/ui/navbar';
 import { ReminderSystem } from './components/ReminderSystem';
 import RemindersSection from './components/reminders/RemindersSection';
 import EmergencyButton from './components/emergency/EmergencyButton';
+import PrescriptionScanner from './components/prescription/PrescriptionScanner';
+import OutbreakAlerts from '@/components/outbreak/OutbreakAlerts';
+import OutbreakAlertBanner from '@/components/outbreak/OutbreakAlertBanner';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { app, auth } from './firebase';
@@ -215,6 +218,14 @@ const App: React.FC = () => {
   const renderDashboard = () => {
     return (
       <div className="animate-fade-in space-y-12">
+        {/* Outbreak Alert Banner */}
+        <OutbreakAlertBanner 
+          onViewAllAlerts={() => navigate('/outbreak-alerts')}
+          maxAlerts={3}
+          autoRotate={true}
+          rotationInterval={8000}
+        />
+        
         {/* Hero Section - Modern Professional Design */}
         <div className="relative overflow-hidden bg-white rounded-3xl shadow-xl border border-gray-100">
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-blue-50/30 to-indigo-50/50"></div>
@@ -293,7 +304,23 @@ const App: React.FC = () => {
               </button>
             </div>
 
-            {/* Camera Diagnostics Card */}
+            {/* Prescription Scanner Card */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
+              <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <FileText className="h-8 w-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Prescription Scanner</h3>
+              <p className="text-gray-600 mb-6 leading-relaxed">Scan or upload prescriptions to extract medicine details, dosage, and duration automatically</p>
+              <button 
+                onClick={() => handleFeatureAccess('/prescription-scanner')}
+                className="w-full px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold hover:from-teal-700 hover:to-teal-800 transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                Scan Prescription
+                <FileText className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Visual Diagnostics Card */}
             <div className="group bg-white rounded-3xl p-8 shadow-lg border border-gray-100 hover:shadow-2xl hover:-translate-y-2 transition-all duration-300">
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                 <Camera className="h-8 w-8 text-white" />
@@ -736,19 +763,16 @@ const App: React.FC = () => {
           <Route path="/health/blood-pressure" element={<BloodPressureChecker />} />
           <Route path="/health/skin-disease" element={<SkinDiseaseChecker />} />
           <Route path="/about/architecture" element={<ArchitecturePage />} />
-          <Route path="/camera" element={<CameraDiagnostics standalone={true} onImageCaptured={handleCameraInput} />} />
-          <Route path="/voice" element={<VoiceInterface standalone={true} onTranscriptReady={handleVoiceInput} />} />
-          <Route path="/education" element={<HealthFactsPage />} />
-          <Route path="/founders" element={<FoundersPage />} />
-          <Route path="/dr-curecast" element={<DrCurecastSimple />} />
           <Route path="/reminders" element={<RemindersSection userId={auth.currentUser?.uid || ''} isAuthenticated={isLoggedIn} />} />
+          <Route path="/prescription-scanner" element={<PrescriptionScanner />} />
+          <Route path="/outbreak-alerts" element={<OutbreakAlerts />} />
         </Routes>
       </main>
-      
-      {/* Global AI Disclaimer Footer */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-amber-50 to-orange-50 border-t border-amber-200 py-2 px-4 shadow-md">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-xs text-amber-700">
+
+      {/* Footer Disclaimer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-amber-50/95 backdrop-blur-sm border-t border-amber-200 px-4 py-2 z-40 md:ml-20">
+        <div className="max-w-7xl mx-auto">
+          <p className="text-xs text-amber-700 text-center">
             ⚠️ This AI assistant provides general health information only. Always consult healthcare professionals for medical advice.
           </p>
         </div>
