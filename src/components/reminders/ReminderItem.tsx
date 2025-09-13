@@ -11,7 +11,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { Reminder } from '@/types/health';
+import type { Reminder } from '@/types';
 import { useReminders } from '@/contexts/RemindersContext';
 
 interface ReminderItemProps {

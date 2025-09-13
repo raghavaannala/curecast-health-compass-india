@@ -189,8 +189,8 @@ const ChatAssistant: React.FC = () => {
 
       <MessageContainer>
         {messages.map((msg, index) => (
-          <Message key={index} isUser={msg.isUser}>
-            <MessageBubble isUser={msg.isUser}>
+          <Message key={index} $isUser={msg.isUser}>
+            <MessageBubble $isUser={msg.isUser}>
               {msg.text}
               {!msg.isUser && msg.severity && (
                 <>

@@ -583,21 +583,21 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
     let medicalState = '';
 
     // Extract the assessment section (Initial assessment)
-    const assessmentRegex = /(?:Initial assessment|Assessment):?\s*(.*?)(?=(?:Possible causes|Causes|Immediate care|When to seek|Medications|Symptoms|$))/is;
+    const assessmentRegex = /(?:Initial assessment|Assessment):?\s*(.*?)(?=(?:Possible causes|Causes|Immediate care|When to seek|$))/is;
     const assessmentMatch = text.match(assessmentRegex);
     if (assessmentMatch && assessmentMatch[1]) {
       detection = assessmentMatch[1].trim();
     }
     
     // Extract the possible causes section
-    const causesRegex = /(?:Possible causes|Causes):?\s*(.*?)(?=(?:Immediate care|Care advice|When to seek|Medications|Symptoms|$))/is;
+    const causesRegex = /(?:Possible causes|Causes):?\s*(.*?)(?=(?:Immediate care|Care advice|When to seek|$))/is;
     const causesMatch = text.match(causesRegex);
     if (causesMatch && causesMatch[1]) {
       consequences = causesMatch[1].trim();
     }
     
     // Extract the immediate care advice section
-    const careAdviceRegex = /(?:Immediate care advice|Care advice|Home care):?\s*(.*?)(?=(?:When to seek|Medical attention|Medications|Symptoms|$))/is;
+    const careAdviceRegex = /(?:Immediate care advice|Care advice|Home care):?\s*(.*?)(?=(?:When to seek|Medical attention|$))/is;
     const careAdviceMatch = text.match(careAdviceRegex);
     if (careAdviceMatch && careAdviceMatch[1]) {
       advice = careAdviceMatch[1].trim();
@@ -943,14 +943,14 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Message isUser={message.isUser}>
+              <Message $isUser={message.isUser}>
                 {renderMessageContent(message)}
               </Message>
             </motion.div>
           ))}
 
           {isProcessing && (
-            <Message isUser={false}>
+            <Message $isUser={false}>
               <TypingIndicator>
                 <span className="typing-dot" />
                 <span className="typing-dot" />

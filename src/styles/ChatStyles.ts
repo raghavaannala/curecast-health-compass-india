@@ -151,38 +151,38 @@ export const MessageContainer = styled.div`
   }
 `;
 
-export const Message = styled.div<{ isUser: boolean }>`
+export const Message = styled.div<{ $isUser: boolean }>`
   display: flex;
   flex-direction: column;
-  align-items: ${props => props.isUser ? 'flex-end' : 'flex-start'};
+  align-items: ${props => props.$isUser ? 'flex-end' : 'flex-start'};
   max-width: 100%;
   animation: ${fadeIn} 0.3s ease forwards;
   position: relative;
   margin-bottom: 8px;
 `;
 
-export const MessageBubble = styled.div<{ isUser: boolean }>`
+export const MessageBubble = styled.div<{ $isUser: boolean }>`
   position: relative;
   padding: 14px 18px;
   border-radius: 16px;
   max-width: 85%;
   font-size: 0.95rem;
-  color: ${props => props.isUser ? '#ffffff' : '#1e293b'};
+  color: ${props => props.$isUser ? '#ffffff' : '#1e293b'};
   line-height: 1.5;
-  background: ${props => props.isUser ? 
+  background: ${props => props.$isUser ? 
     'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)' : 
     'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)'};
-  box-shadow: ${props => props.isUser ? 
+  box-shadow: ${props => props.$isUser ? 
     '0 4px 12px rgba(99, 102, 241, 0.15)' : 
     '0 4px 12px rgba(148, 163, 184, 0.1)'};
-  border: ${props => props.isUser ? 'none' : '1px solid rgba(226, 232, 240, 0.8)'};
+  border: ${props => props.$isUser ? 'none' : '1px solid rgba(226, 232, 240, 0.8)'};
   word-break: break-word;
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
   
   &:hover {
     transform: translateY(-1px);
-    box-shadow: ${props => props.isUser ? 
+    box-shadow: ${props => props.$isUser ? 
       '0 6px 16px rgba(99, 102, 241, 0.2)' : 
       '0 6px 16px rgba(148, 163, 184, 0.15)'};
   }
@@ -191,7 +191,7 @@ export const MessageBubble = styled.div<{ isUser: boolean }>`
     content: attr(data-time);
     position: absolute;
     bottom: -20px;
-    ${props => props.isUser ? 'right: 0;' : 'left: 0;'}
+    ${props => props.$isUser ? 'right: 0;' : 'left: 0;'}
     font-size: 0.7rem;
     color: #94a3b8;
     opacity: 0.8;

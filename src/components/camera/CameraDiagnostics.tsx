@@ -1341,7 +1341,7 @@ Please try again or contact support if this issue persists.`);
         {/* Left column - Camera/Upload UI */}
         <div className={standalone ? 'md:col-span-2' : ''}>
           <Card className="overflow-hidden border border-gray-200">
-            <CardHeader className="bg-gradient-to-r from-primary-50 to-primary-100 p-4">
+            <CardHeader className="bg-gradient-to-r from-emerald-100 to-teal-100 p-4">
               <CardTitle className="text-lg">
                 <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabValue)} className="w-full">
                   <TabsList className="grid w-full grid-cols-2 bg-gradient-to-r from-emerald-100 to-teal-100 p-1 rounded-xl">
@@ -1505,7 +1505,7 @@ Please try again or contact support if this issue persists.`);
           
           {analysisResult && !isAnalyzing && (
             <Card className="mt-4 border border-primary-200 shadow-sm">
-              <TabsContent value="camera" className="space-y-6">
+              <div className="space-y-6">
                 <Card className="border-2 border-emerald-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
                   <CardHeader className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-t-lg">
                     <CardTitle className="flex items-center gap-3">
@@ -1519,7 +1519,7 @@ Please try again or contact support if this issue persists.`);
                     <AnalysisResults analysisText={analysisResult} />
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </div>
             </Card>
           )}
         </div>

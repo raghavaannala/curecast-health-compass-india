@@ -33,7 +33,7 @@ import { useReminders } from '@/contexts/RemindersContext';
 import { useUser } from '@/contexts/UserContext';
 import { Separator } from '@/components/ui/separator';
 import { Bell, Clock, Pill } from 'lucide-react';
-import type { Reminder } from '@/types/health';
+import type { Reminder } from '@/types';
 
 interface ReminderDialogProps {
   open: boolean;
@@ -95,11 +95,21 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
   
   const onSubmit = (values: ReminderFormData) => {
     const reminderData = {
-      ...values,
+      title: values.title,
+      description: values.description || '',
+      type: values.type,
+      date: values.date,
+      time: values.time,
+      recurrence: values.recurrence,
+      dueDateTime: `${values.date}T${values.time}`,
+      tags: [],
       medication: showMedicationFields ? values.medication : undefined,
       adherenceLog: [],
       completed: false,
       userId: user?.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      notificationSettings: values.notificationSettings,
     };
     
     if (editReminder) {
@@ -114,15 +124,15 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
-        <DialogHeader>
-          <DialogTitle>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-2xl font-semibold text-gray-900">
             {editReminder ? 'Edit Reminder' : 'Create New Reminder'}
           </DialogTitle>
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="title"
@@ -183,15 +193,19 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
               )}
             />
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="date"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Date</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700">Date *</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
+                      <Input 
+                        type="date" 
+                        className="h-11" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -203,9 +217,13 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
                 name="time"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Time</FormLabel>
+                    <FormLabel className="text-sm font-medium text-gray-700">Time *</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <Input 
+                        type="time" 
+                        className="h-11" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -239,10 +257,10 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
             
             {showMedicationFields && (
               <>
-                <Separator className="my-4" />
-                <div className="space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <Pill className="h-4 w-4" />
+                <Separator className="my-6" />
+                <div className="space-y-4 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <Pill className="h-5 w-5 text-blue-600" />
                     Medication Details
                   </h4>
                   
@@ -295,11 +313,11 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
               </>
             )}
             
-            <Separator className="my-4" />
+            <Separator className="my-6" />
             
-            <div className="space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
-                <Bell className="h-4 w-4" />
+            <div className="space-y-4 p-4 bg-green-50 rounded-lg">
+              <h4 className="font-semibold text-gray-800 flex items-center gap-2">
+                <Bell className="h-5 w-5 text-green-600" />
                 Notification Settings
               </h4>
               
@@ -307,10 +325,10 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
                 control={form.control}
                 name="notificationSettings.enablePush"
                 render={({ field }) => (
-                  <FormItem className="flex items-center justify-between">
-                    <div>
-                      <FormLabel>Push Notifications</FormLabel>
-                      <FormDescription>
+                  <FormItem className="flex items-center justify-between p-3 bg-white rounded-md border">
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm font-medium">Push Notifications</FormLabel>
+                      <FormDescription className="text-xs">
                         Receive notifications on your device
                       </FormDescription>
                     </div>
@@ -328,10 +346,10 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
                 control={form.control}
                 name="notificationSettings.enableSMS"
                 render={({ field }) => (
-                  <FormItem className="flex items-center justify-between">
-                    <div>
-                      <FormLabel>SMS Notifications</FormLabel>
-                      <FormDescription>
+                  <FormItem className="flex items-center justify-between p-3 bg-white rounded-md border">
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm font-medium">SMS Notifications</FormLabel>
+                      <FormDescription className="text-xs">
                         Receive text message reminders
                       </FormDescription>
                     </div>
@@ -349,10 +367,10 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
                 control={form.control}
                 name="notificationSettings.enableEmail"
                 render={({ field }) => (
-                  <FormItem className="flex items-center justify-between">
-                    <div>
-                      <FormLabel>Email Notifications</FormLabel>
-                      <FormDescription>
+                  <FormItem className="flex items-center justify-between p-3 bg-white rounded-md border">
+                    <div className="space-y-1">
+                      <FormLabel className="text-sm font-medium">Email Notifications</FormLabel>
+                      <FormDescription className="text-xs">
                         Receive email reminders
                       </FormDescription>
                     </div>
@@ -400,15 +418,19 @@ const ReminderDialog = ({ open, onOpenChange, editReminder }: ReminderDialogProp
               />
             </div>
             
-            <DialogFooter>
+            <DialogFooter className="pt-6 gap-3">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
+                className="flex-1 sm:flex-none"
               >
                 Cancel
               </Button>
-              <Button type="submit">
+              <Button 
+                type="submit"
+                className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700"
+              >
                 {editReminder ? 'Update' : 'Create'} Reminder
               </Button>
             </DialogFooter>

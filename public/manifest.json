@@ -1,4 +1,3 @@
-
 {
   "name": "CureCast: Rural Health Companion",
   "short_name": "CureCast",
@@ -9,14 +8,9 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icons/icon-192x192.png",
+      "src": "/favicon.png",
       "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "any"
     }
   ]
 }

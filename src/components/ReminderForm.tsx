@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Reminder, ReminderFormData } from '../types';
 import { reminderService } from '../services/reminderService';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { X, Plus, Calendar, Clock, Tag, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ReminderFormProps {
   isOpen: boolean;
@@ -183,179 +189,215 @@ export const ReminderForm: React.FC<ReminderFormProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center min-h-screen p-4">
         {/* Modal */}
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border relative transform translate-x-0 translate-y-0">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
-            <h2 className="text-lg font-semibold text-gray-900">
-              {editingReminder ? 'Edit Reminder' : 'Add New Reminder'}
-            </h2>
-            <button
+          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Calendar className="h-5 w-5 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editingReminder ? 'Edit Reminder' : 'Create New Reminder'}
+              </h2>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleCancel}
-              className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               disabled={isLoading}
+              className="hover:bg-red-100 text-red-600 rounded-xl"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+              <X className="h-5 w-5" />
+            </Button>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Error Messages */}
             {errors.length > 0 && (
-              <div className="p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg">
-                <ul className="text-sm space-y-1">
-                  {errors.map((error, index) => (
-                    <li key={index}>• {error}</li>
-                  ))}
-                </ul>
+              <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium mb-1">Please fix the following errors:</h4>
+                  <ul className="text-sm space-y-1">
+                    {errors.map((error, index) => (
+                      <li key={index}>• {error}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             )}
 
             {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                Title *
+            <div className="space-y-2">
+              <label htmlFor="title" className="block text-sm font-semibold text-gray-800">
+                Reminder Title *
               </label>
-              <input
+              <Input
                 id="title"
                 type="text"
                 value={formData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Enter reminder title..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Enter a clear, descriptive title..."
+                className="h-12 text-base"
                 disabled={isLoading}
                 maxLength={100}
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.title.length}/100 characters
-              </p>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500">Be specific and clear</span>
+                <span className={cn(
+                  "font-medium",
+                  formData.title.length > 80 ? "text-orange-600" : "text-gray-500"
+                )}>
+                  {formData.title.length}/100
+                </span>
+              </div>
             </div>
 
             {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description
+            <div className="space-y-2">
+              <label htmlFor="description" className="block text-sm font-semibold text-gray-800">
+                Description (Optional)
               </label>
-              <textarea
+              <Textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Enter description (optional)..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                placeholder="Add any additional details, context, or instructions..."
+                rows={4}
+                className="resize-none text-base"
                 disabled={isLoading}
                 maxLength={500}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                {formData.description.length}/500 characters
-              </p>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500">Provide context or special instructions</span>
+                <span className={cn(
+                  "font-medium",
+                  formData.description.length > 400 ? "text-orange-600" : "text-gray-500"
+                )}>
+                  {formData.description.length}/500
+                </span>
+              </div>
             </div>
 
             {/* Date and Time */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Date *
-                </label>
-                <input
-                  id="dueDate"
-                  type="date"
-                  value={formData.dueDate}
-                  onChange={(e) => handleInputChange('dueDate', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={isLoading}
-                  required
-                />
+            <div className="p-4 bg-blue-50 rounded-xl space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Clock className="h-5 w-5 text-blue-600" />
+                <h3 className="font-semibold text-gray-800">Schedule</h3>
               </div>
-              
-              <div>
-                <label htmlFor="dueTime" className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Time *
-                </label>
-                <input
-                  id="dueTime"
-                  type="time"
-                  value={formData.dueTime}
-                  onChange={(e) => handleInputChange('dueTime', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={isLoading}
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="dueDate" className="block text-sm font-semibold text-gray-700">
+                    Date *
+                  </label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={formData.dueDate}
+                    onChange={(e) => handleInputChange('dueDate', e.target.value)}
+                    className="h-12 bg-white"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="dueTime" className="block text-sm font-semibold text-gray-700">
+                    Time *
+                  </label>
+                  <Input
+                    id="dueTime"
+                    type="time"
+                    value={formData.dueTime}
+                    onChange={(e) => handleInputChange('dueTime', e.target.value)}
+                    className="h-12 bg-white"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
               </div>
             </div>
 
             {/* Tags */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tags (Optional)
-              </label>
+            <div className="p-4 bg-green-50 rounded-xl space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="h-5 w-5 text-green-600" />
+                <h3 className="font-semibold text-gray-800">Tags (Optional)</h3>
+              </div>
               
               {/* Current Tags */}
               {formData.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
+                <div className="flex flex-wrap gap-2">
                   {formData.tags.map(tag => (
-                    <span
+                    <Badge
                       key={tag}
-                      className="inline-flex items-center px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded-full"
+                      variant="secondary"
+                      className="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 text-sm"
                     >
                       {tag}
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleRemoveTag(tag)}
-                        className="ml-1 text-blue-500 hover:text-blue-700"
+                        className="ml-1 h-4 w-4 p-0 hover:bg-blue-200 text-blue-600"
                         disabled={isLoading}
                       >
-                        ✕
-                      </button>
-                    </span>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
                   ))}
                 </div>
               )}
 
               {/* Add Tag Input */}
-              <div className="flex space-x-2">
-                <input
+              <div className="flex gap-2">
+                <Input
                   type="text"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyPress={handleTagInputKeyPress}
-                  placeholder="Add a tag..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Add a tag (e.g., work, health, personal)..."
+                  className="flex-1 bg-white"
                   disabled={isLoading}
                 />
-                <button
+                <Button
                   type="button"
                   onClick={handleAddTag}
                   disabled={!tagInput.trim() || isLoading}
-                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  variant="outline"
+                  className="bg-white hover:bg-green-100"
                 >
+                  <Plus className="h-4 w-4 mr-1" />
                   Add
-                </button>
+                </Button>
               </div>
 
               {/* Quick Tag Selection */}
               {availableTags.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-xs text-gray-500 mb-1">Quick select:</p>
-                  <div className="flex flex-wrap gap-1">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Suggested tags:</p>
+                  <div className="flex flex-wrap gap-2">
                     {availableTags
                       .filter(tag => !formData.tags.includes(tag))
-                      .slice(0, 5)
+                      .slice(0, 6)
                       .map(tag => (
-                        <button
+                        <Button
                           key={tag}
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleQuickTagSelect(tag)}
-                          className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200"
+                          className="bg-white hover:bg-green-100 text-xs"
                           disabled={isLoading}
                         >
-                          + {tag}
-                        </button>
+                          <Plus className="h-3 w-3 mr-1" />
+                          {tag}
+                        </Button>
                       ))}
                   </div>
                 </div>
@@ -363,20 +405,21 @@ export const ReminderForm: React.FC<ReminderFormProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex space-x-3 pt-4">
-              <button
+            <div className="flex gap-3 pt-6 border-t">
+              <Button
                 type="button"
+                variant="outline"
                 onClick={handleCancel}
                 disabled={isLoading}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 h-12 text-base"
               >
                 Cancel
-              </button>
+              </Button>
               
-              <button
+              <Button
                 type="submit"
                 disabled={isLoading || !formData.title.trim()}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="flex-1 h-12 text-base bg-blue-600 hover:bg-blue-700"
               >
                 {isLoading ? (
                   <>
@@ -384,9 +427,21 @@ export const ReminderForm: React.FC<ReminderFormProps> = ({
                     Saving...
                   </>
                 ) : (
-                  editingReminder ? 'Update Reminder' : 'Create Reminder'
+                  <>
+                    {editingReminder ? (
+                      <>
+                        <Calendar className="h-4 w-4 mr-2" />
+                        Update Reminder
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Reminder
+                      </>
+                    )}
+                  </>
                 )}
-              </button>
+              </Button>
             </div>
           </form>
         </div>

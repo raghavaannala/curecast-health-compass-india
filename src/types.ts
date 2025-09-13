@@ -159,13 +159,32 @@ export interface Reminder {
   id: string;
   userId?: string;
   title: string;
-  description: string;
+  description?: string;
+  type: 'medication' | 'followup' | 'vaccination';
+  date: string;
+  time: string;
   dueDateTime: string;
+  recurrence: 'none' | 'daily' | 'weekly' | 'monthly';
   tags: string[];
   completed: boolean;
   createdAt: string;
   updatedAt: string;
   isOverdue?: boolean;
+  medication?: {
+    name?: string;
+    dosage?: string;
+    instructions?: string;
+  };
+  notificationSettings?: {
+    enablePush?: boolean;
+    enableSMS?: boolean;
+    enableEmail?: boolean;
+    advanceNotice?: number;
+  };
+  adherenceLog?: {
+    date: string;
+    taken: boolean;
+  }[];
 }
 
 export interface ReminderFormData {

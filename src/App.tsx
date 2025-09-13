@@ -590,8 +590,8 @@ const App: React.FC = () => {
             <div className="hidden lg:flex items-center gap-2 text-right bg-gray-50/60 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-gray-200/50">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
               <div>
-                <span className="text-xs text-gray-500 block">Developed by</span>
-                <span className="text-sm text-gray-900 font-semibold">Raghava Annala</span>
+                <span className="text-xs text-gray-500 block"></span>
+                <span className="text-sm text-gray-900 font-semibold">Xenon</span>
               </div>
             </div>
             

@@ -61,7 +61,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
     <>
       {/* Desktop Sidebar Toggle Button */}
       <motion.button
-        className="hidden md:block fixed top-[80px] left-4 z-[95] bg-white border border-gray-200 text-gray-700 p-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-gray-50"
+        className="hidden md:block fixed top-[80px] left-4 z-[40] bg-white border border-gray-200 text-gray-700 p-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 hover:bg-gray-50"
         onClick={() => setIsCollapsed(!isCollapsed)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -75,7 +75,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
 
       {/* Desktop Sidebar */}
       <motion.div
-        className="hidden md:block fixed top-[70px] left-0 bottom-0 z-[90] bg-white/95 backdrop-blur-xl border-r border-gray-200/50 shadow-xl"
+        className="hidden md:block fixed top-[70px] left-0 bottom-0 z-[30] bg-white/95 backdrop-blur-xl border-r border-gray-200/50 shadow-xl"
         initial={false}
         animate={{
           width: isCollapsed ? '80px' : '280px',
@@ -196,7 +196,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
 
       {/* Mobile Bottom Navigation */}
       <motion.div 
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-white via-blue-50 to-indigo-50 border-t-2 border-blue-200 shadow-2xl z-[90] backdrop-blur-lg"
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-white via-blue-50 to-indigo-50 border-t-2 border-blue-200 shadow-2xl z-[30] backdrop-blur-lg"
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
@@ -262,7 +262,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
           <>
             {/* Overlay for mobile when sidebar is open */}
             <motion.div
-              className="fixed inset-0 bg-black bg-opacity-40 z-[80]"
+              className="fixed inset-0 bg-black bg-opacity-40 z-[20]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -271,7 +271,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
               aria-label="Close sidebar overlay"
             />
             <motion.div 
-              className="fixed inset-0 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 shadow-2xl z-[90] backdrop-blur-xl"
+              className="fixed inset-0 bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 shadow-2xl z-[25] backdrop-blur-xl"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
