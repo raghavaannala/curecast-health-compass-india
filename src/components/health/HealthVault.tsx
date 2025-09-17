@@ -208,6 +208,47 @@ const HealthVault: React.FC = () => {
     }
   };
 
+  const handleCreateRecordWithoutFile = async () => {
+    try {
+      setIsUploading(true);
+      console.log('Creating health record without file upload...');
+      
+      const testRecord = await healthVaultService.createHealthRecordWithoutFile(
+        {
+          title: 'Test Health Record',
+          description: 'This is a test health record created without file upload',
+          category: 'document',
+          tags: ['test', 'placeholder'],
+          isPrivate: true
+        },
+        'test-document.pdf',
+        1024000, // 1MB
+        'application/pdf'
+      );
+      
+      console.log('Test record created:', testRecord);
+      
+      toast({
+        title: "Success",
+        description: "Test health record created successfully!",
+        variant: "default"
+      });
+
+      // Reload records and stats
+      await loadHealthRecords();
+      await loadStorageStats();
+    } catch (error) {
+      console.error('Error creating test health record:', error);
+      toast({
+        title: "Test Failed",
+        description: error instanceof Error ? error.message : "Failed to create test health record.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleDeleteRecord = async (recordId: string) => {
     if (!confirm('Are you sure you want to delete this health record? This action cannot be undone.')) {
       return;
@@ -398,6 +439,13 @@ const HealthVault: React.FC = () => {
                   disabled={isUploading}
                 >
                   Cancel
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCreateRecordWithoutFile}
+                  disabled={isUploading}
+                >
+                  Create Record Without File
                 </Button>
               </div>
             </div>

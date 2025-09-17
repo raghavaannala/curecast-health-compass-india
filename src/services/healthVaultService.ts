@@ -139,7 +139,24 @@ export class HealthVaultService {
       };
     } catch (error) {
       console.error('Error uploading health record:', error);
-      throw new Error('Failed to upload health record. Please try again.');
+      
+      // Handle specific CORS errors
+      if (error instanceof Error) {
+        if (error.message.includes('CORS') || error.message.includes('cross-origin')) {
+          throw new Error('Upload failed due to CORS policy. Please try again or contact support for assistance with file uploads.');
+        }
+        if (error.message.includes('network') || error.message.includes('ERR_FAILED')) {
+          throw new Error('Network error during upload. Please check your internet connection and try again.');
+        }
+        if (error.message.includes('permission') || error.message.includes('unauthorized')) {
+          throw new Error('Permission denied. Please make sure you are signed in and try again.');
+        }
+        if (error.message.includes('quota') || error.message.includes('storage')) {
+          throw new Error('Storage quota exceeded. Please contact support.');
+        }
+      }
+      
+      throw new Error('Failed to upload health record. Please try again or contact support if the issue persists.');
     }
   }
 
