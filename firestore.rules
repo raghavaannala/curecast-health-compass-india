@@ -2,12 +2,195 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow authenticated users to read and write their own profile only
-    match /userProfiles/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    
+    // Helper functions for common validations
+    function isAuthenticated() {
+      return request.auth != null;
     }
     
-    // Default deny all other operations
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidHealthRecord() {
+      return request.resource.data.keys().hasAll(['userId', 'title', 'category', 'fileName', 'fileSize', 'fileType', 'uploadDate', 'lastModified', 'storagePath', 'isPrivate']) &&
+             request.resource.data.userId == request.auth.uid &&
+             request.resource.data.category in ['prescription', 'lab-report', 'medical-image', 'document', 'other'] &&
+             request.resource.data.title is string &&
+             request.resource.data.fileName is string &&
+             request.resource.data.fileSize is number &&
+             request.resource.data.fileType is string &&
+             request.resource.data.isPrivate is bool;
+    }
+    
+    function isValidReminder() {
+      return request.resource.data.keys().hasAll(['userId', 'title', 'type', 'scheduledTime', 'isActive', 'createdAt']) &&
+             request.resource.data.userId == request.auth.uid &&
+             request.resource.data.type in ['medication', 'appointment', 'checkup', 'exercise', 'diet', 'other'] &&
+             request.resource.data.title is string &&
+             request.resource.data.isActive is bool;
+    }
+    
+    // User Profiles - Users can only access their own profile
+    match /userProfiles/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Health Records - Core health vault functionality
+    match /healthRecords/{recordId} {
+      // Users can only read their own records or records shared with them
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        (resource.data.sharedWith != null && request.auth.token.email in resource.data.sharedWith)
+      );
+      
+      // Users can only create records for themselves
+      allow create: if isAuthenticated() && 
+                   isValidHealthRecord() &&
+                   request.resource.data.userId == request.auth.uid;
+      
+      // Users can only update their own records
+      allow update: if isAuthenticated() && 
+                   resource.data.userId == request.auth.uid &&
+                   isValidHealthRecord() &&
+                   request.resource.data.userId == request.auth.uid;
+      
+      // Users can only delete their own records
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+    
+    // Health Reminders - Medication and appointment reminders
+    match /healthReminders/{reminderId} {
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                   isValidReminder() &&
+                   request.resource.data.userId == request.auth.uid;
+    }
+    
+    // Reminders - General reminder system
+    match /reminders/{reminderId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                   request.resource.data.user_id == request.auth.uid &&
+                   request.resource.data.keys().hasAll(['user_id', 'title', 'date_time']) &&
+                   request.resource.data.title is string &&
+                   request.resource.data.date_time is string;
+      allow update: if isAuthenticated() && 
+                   resource.data.user_id == request.auth.uid &&
+                   request.resource.data.user_id == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+    }
+    
+    // Chat History - DrCureCast conversation history
+    match /chatHistory/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Allow subcollections for individual chat sessions
+      match /sessions/{sessionId} {
+        allow read, write: if isOwner(userId);
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+    
+    // Voice Transcriptions - Temporary storage for voice inputs
+    match /voiceTranscriptions/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Auto-delete after 24 hours (handled by client-side cleanup)
+      match /sessions/{sessionId} {
+        allow read, write: if isOwner(userId);
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+    
+    // Prescription Analysis Results - OCR and AI analysis results
+    match /prescriptionAnalysis/{analysisId} {
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid &&
+                   request.resource.data.keys().hasAll(['userId', 'imageUrl', 'analysisResult', 'createdAt']);
+    }
+    
+    // User Preferences - App settings and preferences
+    match /userPreferences/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Emergency Contacts - User's emergency contact information
+    match /emergencyContacts/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      match /contacts/{contactId} {
+        allow read, write: if isOwner(userId);
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+    
+    // Medical History - User's medical history and conditions
+    match /medicalHistory/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      match /conditions/{conditionId} {
+        allow read, write: if isOwner(userId);
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+      }
+      
+      match /allergies/{allergyId} {
+        allow read, write: if isOwner(userId);
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+    
+    // Vital Signs - Blood pressure, heart rate, etc.
+    match /vitalSigns/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      match /readings/{readingId} {
+        allow read, write: if isOwner(userId);
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+    
+    // Symptom Tracking - User's symptom logs
+    match /symptomTracking/{userId} {
+      allow read, write: if isOwner(userId);
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      match /symptoms/{symptomId} {
+        allow read, write: if isOwner(userId);
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+    
+    // App Analytics - Anonymous usage analytics (read-only for users)
+    match /analytics/{document} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only server-side writes allowed
+    }
+    
+    // Public Health Information - Read-only health tips and information
+    match /publicHealthInfo/{document} {
+      allow read: if true; // Public read access
+      allow write: if false; // Only admin writes allowed
+    }
+    
+    // Feedback and Support - User feedback and support requests
+    match /feedback/{feedbackId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+                   request.resource.data.userId == request.auth.uid &&
+                   request.resource.data.keys().hasAll(['userId', 'type', 'message', 'createdAt']);
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+    
+    // Default deny all other operations for security
     match /{document=**} {
       allow read, write: if false;
     }

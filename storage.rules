@@ -1,0 +1,154 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions for validation
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidFileSize() {
+      // Max file size: 50MB
+      return request.resource.size <= 50 * 1024 * 1024;
+    }
+    
+    function isValidFileType() {
+      // Allowed file types for health records
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/msword') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+             request.resource.contentType.matches('text/plain') ||
+             request.resource.contentType.matches('text/csv') ||
+             request.resource.contentType.matches('application/vnd.ms-excel') ||
+             request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+    
+    // Health Records Storage - User-specific health vault files
+    match /health-records/{userId}/{fileName} {
+      // Users can only read their own health record files
+      allow read: if isOwner(userId);
+      
+      // Users can only upload files to their own directory
+      allow write: if isOwner(userId) && 
+                   isValidFileSize() && 
+                   isValidFileType();
+      
+      // Users can delete their own files
+      allow delete: if isOwner(userId);
+    }
+    
+    // Prescription Images - Temporary storage for prescription OCR
+    match /prescription-images/{userId}/{fileName} {
+      // Users can only access their own prescription images
+      allow read: if isOwner(userId);
+      
+      // Users can upload prescription images (images only)
+      allow write: if isOwner(userId) && 
+                   isValidFileSize() && 
+                   request.resource.contentType.matches('image/.*');
+      
+      // Users can delete their own prescription images
+      allow delete: if isOwner(userId);
+    }
+    
+    // Profile Pictures - User profile images
+    match /profile-pictures/{userId}/{fileName} {
+      // Users can read their own profile pictures
+      allow read: if isOwner(userId);
+      
+      // Users can upload profile pictures (images only, max 5MB)
+      allow write: if isOwner(userId) && 
+                   request.resource.size <= 5 * 1024 * 1024 &&
+                   request.resource.contentType.matches('image/.*');
+      
+      // Users can delete their own profile pictures
+      allow delete: if isOwner(userId);
+    }
+    
+    // Temporary Uploads - Short-term file storage for processing
+    match /temp-uploads/{userId}/{fileName} {
+      // Users can access their own temporary files
+      allow read: if isOwner(userId);
+      
+      // Users can upload temporary files (max 10MB)
+      allow write: if isOwner(userId) && 
+                   request.resource.size <= 10 * 1024 * 1024 &&
+                   isValidFileType();
+      
+      // Users can delete their own temporary files
+      allow delete: if isOwner(userId);
+    }
+    
+    // Voice Recordings - Temporary storage for voice inputs
+    match /voice-recordings/{userId}/{fileName} {
+      // Users can access their own voice recordings
+      allow read: if isOwner(userId);
+      
+      // Users can upload voice recordings (audio files only, max 10MB)
+      allow write: if isOwner(userId) && 
+                   request.resource.size <= 10 * 1024 * 1024 &&
+                   request.resource.contentType.matches('audio/.*');
+      
+      // Users can delete their own voice recordings
+      allow delete: if isOwner(userId);
+    }
+    
+    // Camera Captures - Images from camera diagnostics
+    match /camera-captures/{userId}/{fileName} {
+      // Users can access their own camera captures
+      allow read: if isOwner(userId);
+      
+      // Users can upload camera captures (images only, max 20MB)
+      allow write: if isOwner(userId) && 
+                   request.resource.size <= 20 * 1024 * 1024 &&
+                   request.resource.contentType.matches('image/.*');
+      
+      // Users can delete their own camera captures
+      allow delete: if isOwner(userId);
+    }
+    
+    // Shared Files - Files shared between users (read-only for recipients)
+    match /shared-files/{ownerId}/{fileName} {
+      // File owner can read/write/delete
+      allow read, write, delete: if isOwner(ownerId);
+      
+      // Shared users can only read (sharing logic handled in Firestore)
+      allow read: if isAuthenticated();
+    }
+    
+    // Public Assets - App assets and public health information images
+    match /public-assets/{fileName} {
+      // Anyone can read public assets
+      allow read: if true;
+      
+      // Only authenticated admin users can write (implement admin check as needed)
+      allow write: if false; // Disable for now, enable with proper admin validation
+    }
+    
+    // Backup Files - User data backups
+    match /backups/{userId}/{fileName} {
+      // Users can only access their own backups
+      allow read: if isOwner(userId);
+      
+      // Users can create backups (JSON files only, max 100MB)
+      allow write: if isOwner(userId) && 
+                   request.resource.size <= 100 * 1024 * 1024 &&
+                   (request.resource.contentType == 'application/json' ||
+                    request.resource.contentType == 'application/zip');
+      
+      // Users can delete their own backups
+      allow delete: if isOwner(userId);
+    }
+    
+    // Default deny all other storage operations
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

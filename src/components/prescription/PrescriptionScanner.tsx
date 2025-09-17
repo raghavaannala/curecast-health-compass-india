@@ -230,11 +230,6 @@ const PrescriptionScanner: React.FC<PrescriptionScannerProps> = ({ onClose }) =>
                   <p className="text-sm text-gray-500 mb-4">
                     Supports JPEG, PNG, WebP, BMP, TIFF (Max 20MB)
                   </p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                    <p className="text-xs text-blue-700">
-                      💡 <strong>Demo Mode:</strong> Upload any image to see sample prescription data extraction
-                    </p>
-                  </div>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -274,11 +269,6 @@ const PrescriptionScanner: React.FC<PrescriptionScannerProps> = ({ onClose }) =>
                       <p className="text-sm text-gray-500 mb-4">
                         Take a clear photo of your prescription
                       </p>
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                        <p className="text-xs text-green-700">
-                          💡 <strong>Demo Mode:</strong> Camera will show sample prescription data
-                        </p>
-                      </div>
                       <Button
                         onClick={startCamera}
                         disabled={isProcessing}

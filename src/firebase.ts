@@ -2,6 +2,7 @@ import { initializeApp, FirebaseApp } from "firebase/app";
 import { getAnalytics, Analytics, isSupported } from "firebase/analytics";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth, setPersistence, browserSessionPersistence, Auth } from "firebase/auth";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -19,6 +20,7 @@ let app: FirebaseApp;
 let analytics: Analytics | null = null;
 let db: Firestore;
 let auth: Auth;
+let storage: FirebaseStorage;
 
 try {
   console.log("Initializing Firebase app...");
@@ -56,7 +58,18 @@ try {
     // Create a fallback auth object to prevent app crashes
     auth = {} as Auth;
   }
-  
+
+  // Initialize Storage
+  try {
+    console.log("Initializing Firebase Storage...");
+    storage = getStorage(app);
+    console.log("Firebase Storage initialized successfully");
+  } catch (storageError) {
+    console.error("Error initializing Firebase Storage:", storageError);
+    // Create a fallback storage object to prevent app crashes
+    storage = {} as FirebaseStorage;
+  }
+
   // Initialize Analytics conditionally
   try {
     console.log("Checking Analytics support...");
@@ -83,6 +96,7 @@ try {
   app = {} as FirebaseApp;
   db = {} as Firestore;
   auth = {} as Auth;
+  storage = {} as FirebaseStorage;
   analytics = null;
   
   // Update the debug message if it exists
@@ -98,4 +112,4 @@ export const isFirebaseInitialized = () => {
   return app && typeof app !== 'undefined' && Object.keys(app).length > 0;
 };
 
-export { app, analytics, db, auth };
+export { app, analytics, db, auth, storage };

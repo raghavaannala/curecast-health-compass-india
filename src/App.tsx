@@ -18,6 +18,7 @@ import EmergencyButton from './components/emergency/EmergencyButton';
 import PrescriptionScanner from '@/components/prescription/PrescriptionScanner';
 import OutbreakAlerts from '@/components/outbreak/OutbreakAlerts';
 import OutbreakAlertBanner from '@/components/outbreak/OutbreakAlertBanner';
+import ReminderNotificationManager from '@/components/notifications/ReminderNotificationManager';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { app, auth } from './firebase';
@@ -771,6 +772,9 @@ const App: React.FC = () => {
           <Route path="/outbreak-alerts" element={<OutbreakAlerts />} />
         </Routes>
       </main>
+
+      {/* Floating Reminder Notifications */}
+      <ReminderNotificationManager />
 
       {/* Footer Disclaimer */}
       <div className="fixed bottom-0 left-0 right-0 bg-amber-50/95 backdrop-blur-sm border-t border-amber-200 px-4 py-2 z-40 md:ml-20">

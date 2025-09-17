@@ -25,6 +25,11 @@ export interface Reminder {
   description: string;
   date_time: string; // ISO string
   created_at: string; // ISO string
+  completed?: boolean;
+  completed_at?: string;
+  snoozed?: boolean;
+  snoozed_at?: string;
+  snooze_count?: number;
 }
 
 export interface ReminderFormData {
@@ -125,7 +130,12 @@ class FirebaseReminderService {
           title: data.title,
           description: data.description || '',
           date_time: data.date_time,
-          created_at: createdAt
+          created_at: createdAt,
+          completed: data.completed,
+          completed_at: data.completed_at,
+          snoozed: data.snoozed,
+          snoozed_at: data.snoozed_at,
+          snooze_count: data.snooze_count
         });
       });
 
@@ -313,6 +323,105 @@ class FirebaseReminderService {
     } catch (error) {
       console.error('Error getting reminder stats:', error);
       return { total: 0, upcoming: 0, overdue: 0, today: 0 };
+    }
+  }
+
+  /**
+   * Mark a reminder as completed
+   */
+  async markReminderCompleted(reminderId: string, userId: string): Promise<void> {
+    try {
+      if (!userId) {
+        throw new Error('User must be logged in to complete reminders');
+      }
+
+      const reminderRef = doc(db, this.collectionName, reminderId);
+      
+      await updateDoc(reminderRef, {
+        completed: true,
+        completed_at: serverTimestamp()
+      });
+
+      console.log('Reminder marked as completed:', reminderId);
+    } catch (error) {
+      console.error('Error marking reminder as completed:', error);
+      throw new Error('Failed to mark reminder as completed. Please try again.');
+    }
+  }
+
+  /**
+   * Get due reminders (reminders that should trigger notifications)
+   */
+  async getDueReminders(userId: string): Promise<Reminder[]> {
+    try {
+      if (!userId) {
+        return [];
+      }
+
+      const allReminders = await this.getUserReminders(userId);
+      const now = new Date();
+      
+      // Find reminders that are due (within 1 hour of scheduled time and not completed)
+      return allReminders.filter(reminder => {
+        const reminderTime = new Date(reminder.date_time);
+        const timeDiff = now.getTime() - reminderTime.getTime();
+        const minutesDiff = timeDiff / (1000 * 60);
+        
+        // Show if reminder is due (between -1 minute and +60 minutes from scheduled time)
+        const isDue = minutesDiff >= -1 && minutesDiff <= 60;
+        
+        // Don't show completed reminders
+        const isCompleted = (reminder as any).completed === true;
+        
+        return isDue && !isCompleted;
+      });
+    } catch (error) {
+      console.error('Error fetching due reminders:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Snooze a reminder by updating its scheduled time
+   */
+  async snoozeReminder(reminderId: string, userId: string, snoozeMinutes: number): Promise<Reminder> {
+    try {
+      if (!userId) {
+        throw new Error('User must be logged in to snooze reminders');
+      }
+
+      // Get the current reminder
+      const allReminders = await this.getUserReminders(userId);
+      const reminder = allReminders.find(r => r.id === reminderId);
+      
+      if (!reminder) {
+        throw new Error('Reminder not found');
+      }
+
+      // Calculate new time
+      const currentTime = new Date(reminder.date_time);
+      const newTime = new Date(currentTime.getTime() + (snoozeMinutes * 60 * 1000));
+      
+      const reminderRef = doc(db, this.collectionName, reminderId);
+      
+      await updateDoc(reminderRef, {
+        date_time: newTime.toISOString(),
+        snoozed: true,
+        snoozed_at: serverTimestamp(),
+        snooze_count: ((reminder as any).snooze_count || 0) + 1
+      });
+
+      // Return updated reminder
+      const updatedReminder: Reminder = {
+        ...reminder,
+        date_time: newTime.toISOString()
+      };
+
+      console.log(`Reminder snoozed for ${snoozeMinutes} minutes:`, reminderId);
+      return updatedReminder;
+    } catch (error) {
+      console.error('Error snoozing reminder:', error);
+      throw new Error('Failed to snooze reminder. Please try again.');
     }
   }
 }

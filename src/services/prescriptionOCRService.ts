@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_API_KEY, API_CONFIG } from '@/config/api';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY || 'your-api-key-here');
+// Initialize Gemini AI using the same configuration as DrCureCast
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export interface MedicineDetails {
   medicineName: string;
@@ -22,19 +23,13 @@ export interface PrescriptionData {
 }
 
 export class PrescriptionOCRService {
-  private model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  private model = genAI.getGenerativeModel({ model: API_CONFIG.model });
 
   /**
    * Extract text and medicine details from prescription image
    */
   async processPrescriptionImage(imageFile: File): Promise<PrescriptionData> {
     try {
-      // Check if API key is available
-      if (!import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY === 'your-api-key-here') {
-        // Return mock data for demo purposes
-        return this.getMockPrescriptionData();
-      }
-
       // Convert file to base64
       const imageBase64 = await this.fileToBase64(imageFile);
       
@@ -68,7 +63,7 @@ export class PrescriptionOCRService {
         - Only include information that is clearly visible in the prescription
         - If any field is not available, use null or empty string
         
-        Please provide only the JSON response without any additional text.
+        IMPORTANT: Return ONLY the JSON object without any markdown formatting, code blocks, or additional text. Start directly with { and end with }.
       `;
 
       // Generate content using Gemini Vision
@@ -87,10 +82,13 @@ export class PrescriptionOCRService {
       
       // Parse the JSON response
       try {
-        const prescriptionData = JSON.parse(text);
+        // Clean the response text to remove markdown formatting
+        const cleanedText = this.cleanAIResponse(text);
+        const prescriptionData = JSON.parse(cleanedText);
         return this.validateAndCleanData(prescriptionData);
       } catch (parseError) {
         console.error('Error parsing AI response:', parseError);
+        console.error('Raw response:', text);
         // Fallback: try to extract basic information
         return this.extractBasicInfo(text);
       }
@@ -115,12 +113,6 @@ export class PrescriptionOCRService {
    */
   async processCameraCapture(imageDataUrl: string): Promise<PrescriptionData> {
     try {
-      // Check if API key is available
-      if (!import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY === 'your-api-key-here') {
-        // Return mock data for demo purposes
-        return this.getMockPrescriptionData();
-      }
-
       // Convert data URL to base64
       const base64Data = imageDataUrl.split(',')[1];
       
@@ -144,6 +136,8 @@ export class PrescriptionOCRService {
         }
         
         Focus on extracting clear, accurate medicine information. Return only JSON.
+        
+        IMPORTANT: Return ONLY the JSON object without any markdown formatting, code blocks, or additional text. Start directly with { and end with }.
       `;
 
       const result = await this.model.generateContent([
@@ -160,7 +154,9 @@ export class PrescriptionOCRService {
       const text = response.text();
       
       try {
-        const prescriptionData = JSON.parse(text);
+        // Clean the response text to remove markdown formatting
+        const cleanedText = this.cleanAIResponse(text);
+        const prescriptionData = JSON.parse(cleanedText);
         return this.validateAndCleanData(prescriptionData);
       } catch (parseError) {
         return this.extractBasicInfo(text);
@@ -306,6 +302,26 @@ export class PrescriptionOCRService {
       diagnosis: '',
       additionalNotes: 'Automatic extraction may not be 100% accurate. Please verify with original prescription.'
     };
+  }
+
+  /**
+   * Clean AI response to remove markdown formatting and extract JSON
+   */
+  private cleanAIResponse(text: string): string {
+    // First, try to extract JSON from markdown code blocks
+    const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      return codeBlockMatch[1].trim();
+    }
+    
+    // If no code blocks, try to find JSON-like content
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return jsonMatch[0].trim();
+    }
+    
+    // If nothing found, return cleaned text
+    return text.replace(/```[\w]*\n?/g, '').replace(/```/g, '').trim();
   }
 
   /**
