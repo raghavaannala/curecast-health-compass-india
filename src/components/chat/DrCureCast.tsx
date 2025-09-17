@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { geminiService } from '@/services/geminiService';
 import { GEMINI_API_KEY, API_CONFIG } from '@/config/api';
 import { Stethoscope, Loader2, Send, AlertTriangle, Info as InfoIcon, ChevronDown, User, Bot, Heart, Wind, Pill, Phone, Clock, Mic, Camera, Eye, BadgeCheck, CheckCircle2, Clipboard, Zap, Thermometer, ArrowDownRight, ArrowUpRight, AlertCircle, ClipboardCheck, CircleDot, ClipboardList, PillIcon, Globe, Activity, LightbulbIcon, Sparkles, ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -128,12 +128,12 @@ const getInitialGreeting = (language: string) => {
     english: 'Hello! Im Dr. CureCast, your multilingual AI health assistant for rural and semi-urban healthcare. I can help with preventive care, symptoms, vaccination schedules, and connect you with government health services. How can I assist you today?',
     hindi: 'नमस्ते! मैं डॉ. क्योरकास्ट हूं, ग्रामीण और अर्ध-शहरी स्वास्थ्य सेवा के लिए आपका बहुभाषी AI स्वास्थ्य सहायक। मैं निवारक देखभाल, लक्षण, टीकाकरण कार्यक्रम में मदद कर सकता हूं और आपको सरकारी स्वास्थ्य सेवाओं से जोड़ सकता हूं। आज मैं आपकी कैसे सहायता कर सकता हूं?',
     telugu: 'నమస్కారం! నేను డాక్టర్ క్యూరకాస్ట్, గ్రామీణ మరియు అర్ధ-పట్టణ ఆరోగ్య సంరక్షణ కోసం మీ బహుభాషా AI ఆరోగ్య సహాయకుడిని। నేను నివారణ సంరక్షణ, లక్షణాలు, టీకా షెడ్యూల్‌లతో సహాయం చేయగలను మరియు మిమ్మల్ని ప్రభుత్వ ఆరోగ్య సేవలతో కనెక్ట్ చేయగలను. ఈరోజు నేను మీకు ఎలా సహాయం చేయగలను?',
-    tamil: 'வணக்கம்! நான் டாக்டர் க்யூர்காஸ்ட், கிராமப்புற மற்றும் அரை-நகர்ப்புற சுகாதார பராமரிப்புக்கான உங்கள் பன்மொழி AI சுகாதார உதவியாளர். நான் தடுப்பு பராமரிப்பு, அறிகுறிகள், தடுப்பூசி அட்டவணைகளில் உதவ முடியும் மற்றும் உங்களை அரசு சுகாதார சேவைகளுடன் இணைக்க முடியும். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?',
+    tamil: 'வணக்கம்! நான் டாக்டர் க்யூர்காஸ்ட், கிராமப்புற மற்றும் அரை-நகர்ப்புற சுகாதார பராமரிப்புக்கான உங்கள் பன்மொழி AI சுகாதார உதவியாளர். நான் தடுப்பு பராமரிப்பு, அறிகுறிகள், டீக்கூட்டுதல் அட்டவணைகளில் உதவ முடியும் மற்றும் உங்களை அரசு சுகாதார சேவைகளுடன் இணைக்க முடியும். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?',
     bengali: 'নমস্কার! আমি ডাঃ কিউরকাস্ট, গ্রামীণ এবং আধা-শহুরে স্বাস্থ্যসেবার জন্য আপনার বহুভাষিক AI স্বাস্থ্য সহায়ক। আমি প্রতিরোধমূলক যত্ন, উপসর্গ, টিকাদানের সময়সূচীতে সাহায্য করতে পারি এবং আপনাকে সরকারি স্বাস্থ্য সেবার সাথে সংযুক্ত করতে পারি। আজ আমি আপনাকে কীভাবে সাহায্য করতে পারি?',
     marathi: 'नमस्कार! मी डॉ. क्युरकास्ट आहे, ग्रामीण आणि अर्ध-शहरी आरोग्यसेवेसाठी तुमचा बहुभाषिक AI आरोग्य सहाय्यक. मी प्रतिबंधात्मक काळजी, लक्षणे, लसीकरण वेळापत्रकात मदत करू शकतो आणि तुम्हाला सरकारी आरोग्य सेवांशी जोडू शकतो. आज मी तुमची कशी मदत करू शकतो?',
     gujarati: 'નમસ્તે! હું ડૉ. ક્યુરકાસ્ટ છું, ગ્રામીણ અને અર્ધ-શહેરી આરોગ્યસંભાળ માટે તમારો બહુભાષી AI આરોગ્ય સહાયક. હું નિવારક સંભાળ, લક્ષણો, રસીકરણ કાર્યક્રમોમાં મદદ કરી શકું છું અને તમને સરકારી આરોગ્ય સેવાઓ સાથે જોડી શકું છું. આજે હું તમારી કેવી રીતે મદદ કરી શકું?',
     kannada: 'ನಮಸ್ಕಾರ! ನಾನು ಡಾ. ಕ್ಯೂರ್‌ಕಾಸ್ಟ್, ಗ್ರಾಮೀಣ ಮತ್ತು ಅರೆ-ನಗರ ಆರೋಗ್ಯ ಸೇವೆಗಾಗಿ ನಿಮ್ಮ ಬಹುಭಾಷಾ AI ಆರೋಗ್ಯ ಸಹಾಯಕ. ನಾನು ತಡೆಗಟ್ಟುವ ಆರೈಕೆ, ರೋಗಲಕ್ಷಣಗಳು, ವ್ಯಾಕ್ಸಿನೇಷನ್ ವೇಳಾಪಟ್ಟಿಗಳಲ್ಲಿ ಸಹಾಯ ಮಾಡಬಹುದು ಮತ್ತು ನಿಮ್ಮನ್ನು ಸರ್ಕಾರಿ ಆರೋಗ್ಯ ಸೇವೆಗಳೊಂದಿಗೆ ಸಂಪರ್ಕಿಸಬಹುದು. ಇಂದು ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?',
-    malayalam: 'നമസ്കാരം! ഞാൻ ഡോ. ക്യൂർകാസ്റ്റ് ആണ്, ഗ്രാമീണ, അർദ്ധ നഗര ആരോഗ്യ സംരക്ഷണത്തിനുള്ള നിങ്ങളുടെ ബഹുഭാഷാ AI ആരോഗ്യ സഹായി. പ്രതിരോധ പരിചരണം, ലക്ഷണങ്ങൾ, വാക്സിനേഷൻ ഷെഡ്യൂളുകൾ എന്നിവയിൽ എനിക്ക് സഹായിക്കാനും നിങ്ങളെ സർക്കാർ ആരോഗ്യ സേവനങ്ങളുമായി ബന്ധിപ്പിക്കാനും കഴിയും. ഇന്ന് എനിക്ക് നിങ്ങളെ എങ്ങനെ സഹായിക്കാം?',
+    malayalam: 'നമസ്കാരം! ഞാൻ ഡോ. ക്യൂർകാസ്റ്റ് ആണ്, ഗ്രാമീണ, അർദ്ധ നഗര ആരോഗ്യ സംരക്ഷണത്തിനുള്ള നിങ്ങളുടെ ബഹുഭാഷാ AI ആരോഗ്യ സഹായി. ഞാൻ പ്രതിരോധ പരിചരണം, ലക്ഷണങ്ങൾ, വാക്സിനേഷൻ ഷെഡ്യൂളുകൾ എന്നിവയിൽ സഹായിക്കാനും നിങ്ങളെ സർക്കാർ ആരോഗ്യ സേവനങ്ങളുമായി ബന്ധിപ്പിക്കാനും കഴിയും. ഇന്ന് എനിക്ക് നിങ്ങളെ എങ്ങനെ സഹായിക്കാം?',
     punjabi: 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਡਾ. ਕਿਊਰਕਾਸਟ ਹਾਂ, ਪੇਂਡੂ ਅਤੇ ਅਰਧ-ਸ਼ਹਿਰੀ ਸਿਹਤ ਸੰਭਾਲ ਲਈ ਤੁਹਾਡਾ ਬਹੁ-ਭਾਸ਼ਾਈ AI ਸਿਹਤ ਸਹਾਇਕ। ਮੈਂ ਰੋਕਥਾਮ ਦੇਖਭਾਲ, ਲੱਛਣ, ਟੀਕਾਕਰਨ ਸਮਾਂ-ਸਾਰਣੀ ਵਿੱਚ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ ਅਤੇ ਤੁਹਾਨੂੰ ਸਰਕਾਰੀ ਸਿਹਤ ਸੇਵਾਵਾਂ ਨਾਲ ਜੋੜ ਸਕਦਾ ਹਾਂ। ਅੱਜ ਮੈਂ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ?',
     urdu: 'السلام علیکم! میں ڈاکٹر کیورکاسٹ ہوں، دیہی اور نیم شہری صحت کی دیکھ بھال کے لیے آپ کا کثیر لسانی AI صحت معاون۔ میں احتیاطی دیکھ بھال، علامات، ویکسینیشن شیڈول میں مدد کر سکتا ہوں اور آپ کو حکومتی صحت کی خدمات سے جوڑ سکتا ہوں۔ آج میں آپ کی کیسے مدد کر سکتا ہوں؟',
     odia: 'ନମସ୍କାର! ମୁଁ ଡାଃ କ୍ୟୁରକାଷ୍ଟ, ଗ୍ରାମାଞ୍ଚଳ ଏବଂ ଅର୍ଦ୍ଧ-ସହରାଞ୍ଚଳ ସ୍ୱାସ୍ଥ୍ୟ ସେବା ପାଇଁ ଆପଣଙ୍କର ବହୁଭାଷୀ AI ସ୍ୱାସ୍ଥ୍ୟ ସହାୟକ। ମୁଁ ପ୍ରତିରୋଧମୂଳକ ଯତ୍ନ, ଲକ୍ଷଣ, ଟୀକାକରଣ କାର୍ଯ୍ୟସୂଚୀରେ ସାହାଯ୍ୟ କରିପାରିବି ଏବଂ ଆପଣଙ୍କୁ ସରକାରୀ ସ୍ୱାସ୍ଥ୍ୟ ସେବା ସହିତ ସଂଯୋଗ କରିପାରିବି। ଆଜି ମୁଁ ଆପଣଙ୍କୁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?',
@@ -182,9 +182,6 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
     "Skin rash",
     "Help me with medication"
   ]);
-
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
   useEffect(() => {
     scrollToBottom();
@@ -427,14 +424,22 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
       
       If the input is in Hindi or Telugu, respond in that same language with the same warm, conversational approach.`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
+      // Use geminiService with fallback support
+      const response = await geminiService.generateContent(prompt, {
+        maxTokens: 1000,
+        temperature: 0.7
+      });
+
+      console.log(`Chat response generated using model: ${response.modelUsed} (${response.attemptCount} attempts)`);
+      console.log('Response object:', response);
+      console.log('Response text:', response.text);
+      console.log('Response text length:', response.text?.length);
       
-      if (!response.text) {
+      if (!response.text || response.text.trim() === '') {
         throw new Error('No response from AI model');
       }
 
-      const aiResponseText = response.text();
+      const aiResponseText = response.text;
       const processedResponse = processAIResponse(aiResponseText);
 
       setMessages(prev => [
@@ -450,15 +455,34 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
     } catch (error) {
       console.error('Error in chat:', error);
       
+      let errorMessage = currentLanguage === 'hindi' 
+        ? 'क्षमा करें, मैं अभी आपके लक्षणों का विश्लेषण करने में असमर्थ हूं। किसी भी चिंताजनक लक्षण के लिए, कृपया चिकित्सक से परामर्श करें।'
+        : currentLanguage === 'telugu'
+        ? 'క్షమించండి, నేను ప్రస్తుతం మీ లక్షణాలను విశ్లేషించలేకపోతున్నాను. ఏదైనా ఆందోళనకరమైన లక్షణాల కోసం, దయచేసి వైద్యుడిని సంప్రదించండి.'
+        : 'I apologize, but I\'m having trouble analyzing your symptoms right now. For any concerning symptoms, please consult a healthcare professional.';
+
+      // Provide more specific error messages based on the error type
+      if (error instanceof Error) {
+        if (error.message.includes('No available models')) {
+          errorMessage = currentLanguage === 'hindi' 
+            ? 'AI सेवा अस्थायी रूप से अनुपलब्ध है। सभी मॉडल समस्याओं का सामना कर रहे हैं। कृपया बाद में पुनः प्रयास करें।'
+            : currentLanguage === 'telugu'
+            ? 'AI సేవ తాత్కాలికంగా అందుబాటులో లేదు. అన్ని మోడల్‌లు సమస్యలను ఎదుర్కొంటున్నాయి. దయచేసి తర్వాత మళ్లీ ప్రయత్నించండి.'
+            : 'AI service temporarily unavailable. All models are experiencing issues. Please try again later.';
+        } else if (error.message.includes('All available models failed')) {
+          errorMessage = currentLanguage === 'hindi' 
+            ? 'सेवा अस्थायी रूप से अधिभारित है। कृपया कुछ मिनटों में पुनः प्रयास करें।'
+            : currentLanguage === 'telugu'
+            ? 'సేవ తాత్కాలికంగా ఓవర్‌లోడ్ అయ్యింది. దయచేసి కొన్ని నిమిషాలలో మళ్లీ ప్రయత్నించండి.'
+            : 'Service temporarily overloaded. Please try again in a few minutes.';
+        }
+      }
+      
       // Add the error message to the chat
       setMessages(prev => [
         ...prev,
         {
-          text: currentLanguage === 'hindi' 
-            ? 'क्षमा करें, मैं अभी आपके लक्षणों का विश्लेषण करने में असमर्थ हूं। किसी भी चिंताजनक लक्षण के लिए, कृपया चिकित्सक से परामर्श करें।'
-            : currentLanguage === 'telugu'
-            ? 'క్షమించండి, నేను ప్రస్తుతం మీ లక్షణాలను విశ్లేషించలేకపోతున్నాను. ఏదైనా ఆందోళనకరమైన లక్షణాల కోసం, దయచేసి వైద్యుడిని సంప్రదించండి.'
-            : 'I apologize, but I\'m having trouble analyzing your symptoms right now. For any concerning symptoms, please consult a healthcare professional.',
+          text: errorMessage,
           isUser: false,
           severity: 'medium',
           recommendation: {

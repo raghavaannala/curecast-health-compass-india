@@ -1,8 +1,8 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GEMINI_API_KEY, API_CONFIG } from '@/config/api';
+import { geminiService } from './geminiService';
+import { API_CONFIG } from '@/config/api';
 
 // Initialize Gemini AI using the same configuration as DrCureCast
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+// const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export interface MedicineDetails {
   medicineName: string;
@@ -23,7 +23,7 @@ export interface PrescriptionData {
 }
 
 export class PrescriptionOCRService {
-  private model = genAI.getGenerativeModel({ model: API_CONFIG.model });
+  // private model = genAI.getGenerativeModel({ model: API_CONFIG.model });
 
   /**
    * Extract text and medicine details from prescription image
@@ -66,40 +66,41 @@ export class PrescriptionOCRService {
         IMPORTANT: Return ONLY the JSON object without any markdown formatting, code blocks, or additional text. Start directly with { and end with }.
       `;
 
-      // Generate content using Gemini Vision
-      const result = await this.model.generateContent([
+      // Use geminiService with fallback support
+      const response = await geminiService.generateContentWithImage(
         prompt,
         {
-          inlineData: {
-            data: imageBase64,
-            mimeType: imageFile.type
-          }
+          data: imageBase64,
+          mimeType: imageFile.type
+        },
+        {
+          maxTokens: 1000,
+          temperature: 0.3 // Lower temperature for more consistent JSON output
         }
-      ]);
+      );
 
-      const response = await result.response;
-      const text = response.text();
+      console.log(`Prescription OCR processed using model: ${response.modelUsed} (${response.attemptCount} attempts)`);
       
       // Parse the JSON response
       try {
         // Clean the response text to remove markdown formatting
-        const cleanedText = this.cleanAIResponse(text);
+        const cleanedText = this.cleanAIResponse(response.text);
         const prescriptionData = JSON.parse(cleanedText);
         return this.validateAndCleanData(prescriptionData);
       } catch (parseError) {
         console.error('Error parsing AI response:', parseError);
-        console.error('Raw response:', text);
+        console.error('Raw response:', response.text);
         // Fallback: try to extract basic information
-        return this.extractBasicInfo(text);
+        return this.extractBasicInfo(response.text);
       }
     } catch (error) {
       console.error('Error processing prescription:', error);
       // Provide more specific error messages
       if (error instanceof Error) {
-        if (error.message.includes('API_KEY')) {
-          throw new Error('AI service configuration issue. Please contact support.');
-        } else if (error.message.includes('quota') || error.message.includes('limit')) {
-          throw new Error('Service temporarily unavailable. Please try again later.');
+        if (error.message.includes('No available models')) {
+          throw new Error('AI service temporarily unavailable. All models are experiencing issues. Please try again later.');
+        } else if (error.message.includes('All available models failed')) {
+          throw new Error('Service temporarily overloaded. Please try again in a few minutes.');
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
           throw new Error('Network error. Please check your connection and try again.');
         }
@@ -140,35 +141,37 @@ export class PrescriptionOCRService {
         IMPORTANT: Return ONLY the JSON object without any markdown formatting, code blocks, or additional text. Start directly with { and end with }.
       `;
 
-      const result = await this.model.generateContent([
+      // Use geminiService with fallback support
+      const response = await geminiService.generateContentWithImage(
         prompt,
         {
-          inlineData: {
-            data: base64Data,
-            mimeType: 'image/jpeg'
-          }
+          data: base64Data,
+          mimeType: 'image/jpeg'
+        },
+        {
+          maxTokens: 1000,
+          temperature: 0.3 // Lower temperature for more consistent JSON output
         }
-      ]);
+      );
 
-      const response = await result.response;
-      const text = response.text();
+      console.log(`Camera OCR processed using model: ${response.modelUsed} (${response.attemptCount} attempts)`);
       
       try {
         // Clean the response text to remove markdown formatting
-        const cleanedText = this.cleanAIResponse(text);
+        const cleanedText = this.cleanAIResponse(response.text);
         const prescriptionData = JSON.parse(cleanedText);
         return this.validateAndCleanData(prescriptionData);
       } catch (parseError) {
-        return this.extractBasicInfo(text);
+        return this.extractBasicInfo(response.text);
       }
     } catch (error) {
       console.error('Error processing camera capture:', error);
       // Provide more specific error messages
       if (error instanceof Error) {
-        if (error.message.includes('API_KEY')) {
-          throw new Error('AI service configuration issue. Please contact support.');
-        } else if (error.message.includes('quota') || error.message.includes('limit')) {
-          throw new Error('Service temporarily unavailable. Please try again later.');
+        if (error.message.includes('No available models')) {
+          throw new Error('AI service temporarily unavailable. All models are experiencing issues. Please try again later.');
+        } else if (error.message.includes('All available models failed')) {
+          throw new Error('Service temporarily overloaded. Please try again in a few minutes.');
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
           throw new Error('Network error. Please check your connection and try again.');
         }
