@@ -1,6 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '../config/api';
+
+// System prompt for consistent chatbot behavior
+const systemPrompt = `
+You are a friendly healthcare chatbot.
+
+Rules:
+1. If the user greets (e.g., "hi", "hello"), reply: "Hi, how are you? How can I help you today?"
+2. If the user mentions a symptom like "I have fever":
+   - Ask one question at a time:
+     1. "What is your current body temperature?"
+     2. "Since how many days have you been experiencing this?"
+     3. "Do you have other symptoms like cough, sore throat, body pain, or headache?"
+     4. "Are you taking any medicine?"
+     5. "Do you have existing health conditions (like diabetes, asthma, heart problems)?"
+   - After collecting answers, give a short summary of the condition, simple self-care advice, and a disclaimer: "I am not a doctor. Please consult a healthcare professional for proper diagnosis and treatment."
+`;
 import {
   ChatContainer,
   Header,
@@ -67,18 +83,36 @@ interface Message {
     action: string;
     text: string;
   };
+  isEmpathyResponse?: boolean;
+  isFollowUpQuestion?: boolean;
+  isAssessment?: boolean;
+}
+
+interface AssessmentState {
+  isActive: boolean;
+  symptom: string;
+  step: number;
+  responses: string[];
+  questions: string[];
 }
 
 const ChatAssistant: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     { 
-      text: "Hello! I'm Dr. CureCast. It's nice to meet you. How can I help you today?", 
+      text: "Hi, how are you? How can I help you today?", 
       isUser: false 
     }
   ]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [assessmentState, setAssessmentState] = useState<AssessmentState>({
+    isActive: false,
+    symptom: '',
+    step: 0,
+    responses: [],
+    questions: []
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -87,6 +121,118 @@ const ChatAssistant: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Detect if message is a greeting
+  const detectGreeting = (text: string): boolean => {
+    const greetings = [
+      'hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening',
+      'namaste', 'namaskar', 'hola', 'bonjour', 'guten tag'
+    ];
+    
+    const lowerText = text.toLowerCase().trim();
+    return greetings.some(greeting => 
+      lowerText === greeting || 
+      lowerText.startsWith(greeting + ' ') || 
+      lowerText.startsWith(greeting + ',')
+    );
+  };
+
+  // Detect if message mentions symptoms - Enhanced recognition
+  const detectSymptomMention = (text: string): string | null => {
+    const symptomKeywords = [
+      'fever', 'headache', 'cough', 'pain', 'ache', 'hurt', 'sick', 'nausea',
+      'vomiting', 'diarrhea', 'dizzy', 'tired', 'fatigue', 'sore', 'swollen',
+      'rash', 'itchy', 'burning', 'stiff', 'weak', 'breathe', 'chest', 'stomach',
+      'back', 'joint', 'muscle', 'throat', 'temperature', 'hot', 'chills',
+      'cold', 'flu', 'migraine', 'diabetes', 'asthma', 'allergies', 'infection',
+      'wound', 'cut', 'bruise', 'sprain', 'strain', 'anxiety', 'depression',
+      'insomnia', 'constipation', 'heartburn', 'acidity', 'gas', 'bloating'
+    ];
+    
+    const lowerText = text.toLowerCase();
+    for (const symptom of symptomKeywords) {
+      if (lowerText.includes(symptom)) {
+        return symptom;
+      }
+    }
+    return null;
+  };
+
+  // Generate empathetic response based on symptom - Caring and supportive
+  const generateEmpathyResponse = (symptom: string): string => {
+    const empathyResponses = {
+      fever: "I'm sorry to hear you're not feeling well. Let me help you understand what might be going on.",
+      headache: "I understand you're dealing with a headache. That can be really uncomfortable. Let me ask you some questions to better help you.",
+      cough: "A persistent cough can be quite bothersome. I'm here to help you figure out what might be causing it.",
+      pain: "I'm sorry you're experiencing pain. Let me ask you some questions so I can provide you with the best guidance.",
+      sick: "I understand you're not feeling well. That's never pleasant, and I'm here to help you through this.",
+      temperature: "I'm sorry to hear you're not feeling well with temperature issues. Let me help you understand what's happening.",
+      hot: "I understand you're feeling unwell. Let me ask you some questions to better assess your condition.",
+      chills: "I'm sorry you're experiencing chills. That can be quite uncomfortable. Let me help you understand what might be going on."
+    };
+    
+    return empathyResponses[symptom] || "I understand you're not feeling well. I'm here to help you through this.";
+  };
+
+  // Generate follow-up questions based on system prompt - Exact questions
+  const generateFollowUpQuestion = (symptom: string, step: number): string => {
+    // Exact questions from system prompt
+    const mandatoryQuestions = [
+      "What is your current body temperature?",
+      "Since how many days have you been experiencing this?",
+      "Do you have other symptoms like cough, sore throat, body pain, or headache?",
+      "Are you taking any medicine?",
+      "Do you have existing health conditions (like diabetes, asthma, heart problems)?"
+    ];
+
+    const questionBank = {
+      // All symptoms use the same standardized questions from system prompt
+      fever: mandatoryQuestions,
+      temperature: mandatoryQuestions,
+      hot: mandatoryQuestions,
+      chills: mandatoryQuestions,
+      headache: mandatoryQuestions,
+      cough: mandatoryQuestions,
+      pain: mandatoryQuestions,
+      sick: mandatoryQuestions,
+      nausea: mandatoryQuestions,
+      vomiting: mandatoryQuestions,
+      diarrhea: mandatoryQuestions,
+      dizzy: mandatoryQuestions,
+      tired: mandatoryQuestions,
+      fatigue: mandatoryQuestions,
+      sore: mandatoryQuestions,
+      swollen: mandatoryQuestions,
+      rash: mandatoryQuestions,
+      itchy: mandatoryQuestions,
+      burning: mandatoryQuestions,
+      stiff: mandatoryQuestions,
+      weak: mandatoryQuestions,
+      breathe: mandatoryQuestions,
+      chest: mandatoryQuestions,
+      stomach: mandatoryQuestions,
+      back: mandatoryQuestions,
+      joint: mandatoryQuestions,
+      muscle: mandatoryQuestions,
+      throat: mandatoryQuestions
+    };
+    
+    const questions = questionBank[symptom] || questionBank.sick;
+    return questions[step] || "Can you tell me more about how you're feeling?";
+  };
+
+  // Generate acknowledgment for user's answer - Natural and caring
+  const generateAcknowledgment = (): string => {
+    const acknowledgments = [
+      "Thank you for sharing that with me.",
+      "I understand, that's helpful to know.",
+      "Got it, thank you for the information.",
+      "That's very helpful, thank you.",
+      "I see, thanks for letting me know.",
+      "Thank you, that gives me a better picture."
+    ];
+    return acknowledgments[Math.floor(Math.random() * acknowledgments.length)];
+  };
 
   const analyzeSymptoms = (text: string): { severity: 'low' | 'medium' | 'high', condition: string, recommendation: { action: string, text: string } } => {
     const textLower = text.toLowerCase();
@@ -132,41 +278,142 @@ const ChatAssistant: React.FC = () => {
 
     const userMessage = { text: newMessage, isUser: true };
     setMessages(prev => [...prev, userMessage]);
+    const currentMessage = newMessage;
     setNewMessage('');
     setIsLoading(true);
 
     try {
-      // First, analyze symptoms using rule-based system
-      const analysis = analyzeSymptoms(newMessage);
+      // Check if we're in an active assessment
+      if (assessmentState.isActive) {
+        // Continue assessment with acknowledgment
+        const acknowledgment = generateAcknowledgment();
+        setMessages(prev => [...prev, {
+          text: acknowledgment,
+          isUser: false
+        }]);
 
-      // Then get detailed response from Gemini
-      const result = await model.generateContent(`As a professional doctor, provide a detailed but concise response about the following symptoms: ${newMessage}. Focus on immediate care advice and when to seek medical attention.`);
-      const response = await result.response;
-      const aiResponse = response.text();
+        // Update assessment state with user's response
+        const updatedResponses = [...assessmentState.responses, currentMessage];
+        const nextStep = assessmentState.step + 1;
 
-      // Add both the AI response and our rule-based analysis
-      setMessages(prev => [
-        ...prev,
-        {
-          text: aiResponse,
-          isUser: false,
-          severity: analysis.severity,
-          recommendation: analysis.recommendation
+        // Check if we have more questions (5 mandatory questions)
+        if (nextStep < 5) {
+          // Ask next question
+          setTimeout(() => {
+            const nextQuestion = generateFollowUpQuestion(assessmentState.symptom, nextStep);
+            setMessages(prev => [...prev, {
+              text: nextQuestion,
+              isUser: false,
+              isFollowUpQuestion: true
+            }]);
+          }, 1500);
+
+          setAssessmentState(prev => ({
+            ...prev,
+            step: nextStep,
+            responses: updatedResponses
+          }));
+        } else {
+          // Assessment complete - generate final assessment
+          setTimeout(async () => {
+            const finalAssessment = await generateFinalAssessment(assessmentState.symptom, updatedResponses);
+            setMessages(prev => [...prev, {
+              text: finalAssessment,
+              isUser: false,
+              isAssessment: true,
+              severity: 'medium'
+            }]);
+          }, 2000);
+
+          // Reset assessment state
+          setAssessmentState({
+            isActive: false,
+            symptom: '',
+            step: 0,
+            responses: [],
+            questions: []
+          });
         }
-      ]);
+      } else {
+        // Check if message is a greeting
+        if (detectGreeting(currentMessage)) {
+          setMessages(prev => [...prev, {
+            text: "Hi, how are you? How can I help you today?",
+            isUser: false
+          }]);
+        } else {
+          // Check if message mentions symptoms
+          const detectedSymptom = detectSymptomMention(currentMessage);
+          
+          if (detectedSymptom) {
+            // Start symptom assessment - Ask first question directly
+            const firstQuestion = "What is your current body temperature?";
+            
+            setMessages(prev => [...prev, {
+              text: firstQuestion,
+              isUser: false,
+              isFollowUpQuestion: true
+            }]);
+
+            // Set assessment state
+            setAssessmentState({
+              isActive: true,
+              symptom: detectedSymptom,
+              step: 0,
+              responses: [],
+              questions: []
+            });
+          } else {
+            // Regular health query - use Gemini with system prompt
+            const result = await model.generateContent(`${systemPrompt}\n\nUser message: "${currentMessage}"\n\nProvide a helpful response following the system prompt guidelines.`);
+            const response = await result.response;
+            const aiResponse = response.text();
+
+            setMessages(prev => [...prev, {
+              text: aiResponse,
+              isUser: false
+            }]);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error in chat:', error);
       setMessages(prev => [...prev, {
-        text: "I apologize, but I'm having trouble analyzing your symptoms right now. For any concerning symptoms, please consult a healthcare professional.",
+        text: "I apologize, but I'm having trouble processing your message right now. For any concerning symptoms, please consult a healthcare professional.",
         isUser: false,
-        severity: 'medium',
-        recommendation: {
-          action: 'visit clinic',
-          text: 'Please consult a healthcare professional for proper diagnosis'
-        }
+        severity: 'medium'
       }]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Generate final assessment following system prompt format exactly
+  const generateFinalAssessment = async (symptom: string, responses: string[]): Promise<string> => {
+    try {
+      const prompt = `${systemPrompt}
+
+Based on a patient reporting ${symptom} and providing these responses to the 5 questions: ${responses.join(', ')}, provide:
+1. A short summary of the condition
+2. Simple self-care advice 
+3. The exact disclaimer: "I am not a doctor. Please consult a healthcare professional for proper diagnosis and treatment."
+
+Keep it simple and follow the system prompt guidelines exactly.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
+    } catch (error) {
+      return `**Summary of your condition:**
+Based on your ${symptom} and the information you've shared, you appear to be experiencing symptoms that may be related to a common condition. 
+
+**Self-care advice:**
+• Get adequate rest
+• Stay hydrated by drinking plenty of fluids
+• Monitor your symptoms
+• Maintain a comfortable environment
+
+**I am not a doctor. Please consult a healthcare professional for proper diagnosis and treatment.**`;
     }
   };
 
@@ -184,14 +431,41 @@ const ChatAssistant: React.FC = () => {
     <ChatContainer>
       <Header>
         <h1>Dr. CureCast</h1>
-        <p>Your personal assistant</p>
+        <p>
+          {assessmentState.isActive 
+            ? `Symptom Assessment - Step ${assessmentState.step + 1}/5 (${assessmentState.symptom})`
+            : 'Your personal healthcare assistant'
+          }
+        </p>
       </Header>
 
       <MessageContainer>
         {messages.map((msg, index) => (
           <Message key={index} $isUser={msg.isUser}>
             <MessageBubble $isUser={msg.isUser}>
+              {/* Message type indicator */}
+              {!msg.isUser && (
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', fontSize: '12px', color: '#666' }}>
+                  {msg.isEmpathyResponse && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      💙 <em>Empathetic Response</em>
+                    </span>
+                  )}
+                  {msg.isFollowUpQuestion && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      ❓ <em>Follow-up Question</em>
+                    </span>
+                  )}
+                  {msg.isAssessment && (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      📋 <em>Health Assessment</em>
+                    </span>
+                  )}
+                </div>
+              )}
+              
               {msg.text}
+              
               {!msg.isUser && msg.severity && (
                 <>
                   <SeverityIndicator severity={msg.severity}>

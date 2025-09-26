@@ -3,7 +3,7 @@ import { Mic, MicOff, Play, Square, Volume2, ArrowRight, Stethoscope } from 'luc
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useGlobalLanguage } from '@/contexts/GlobalLanguageContext';
 import { useToast } from '@/components/ui/use-toast';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@/config/api';
@@ -22,13 +22,13 @@ interface VoiceInterfaceProps {
 }
 
 const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ standalone = true, onTranscriptReady }) => {
-  const { currentLanguage } = useLanguage();
+  const { currentLanguage } = useGlobalLanguage();
   const { toast } = useToast();
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [response, setResponse] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption>(currentLanguage as LanguageOption || 'english');
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageOption>('english');
   const [isProcessing, setIsProcessing] = useState(false);
   const [readyToSend, setReadyToSend] = useState(false);
   const recognitionRef = useRef<any>(null);

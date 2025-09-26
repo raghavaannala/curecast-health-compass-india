@@ -3,15 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertTriangle, Activity, Heart, Info } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { AlertTriangle, Activity, Heart, Info, Globe } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGlobalLanguage } from '@/contexts/GlobalLanguageContext';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_API_KEY } from '@/config/api';
 import VoiceInputButton from '@/components/health/VoiceInputButton';
 import AIDisclaimer from '@/components/ui/AIDisclaimer';
 
 const BloodPressureChecker: React.FC = () => {
-  const { t, currentLanguage } = useLanguage();
+  const { t, currentLanguage, changeLanguage } = useGlobalLanguage();
   const [systolic, setSystolic] = useState('');
   const [diastolic, setDiastolic] = useState('');
   const [riskLevel, setRiskLevel] = useState<string | null>(null);
@@ -59,14 +60,18 @@ const BloodPressureChecker: React.FC = () => {
       setRiskLevel(risk);
       
       // Get lifestyle tips from Gemini
+      const languageName = currentLanguage.name;
       const prompt = `You are a helpful medical assistant specializing in cardiovascular health.
       
       A patient has a blood pressure reading of ${systolic}/${diastolic} mm Hg, which is classified as "${risk}".
       
-      Please provide concise, practical lifestyle tips that would be helpful for someone with this blood pressure level.
+      Please provide your response in ${languageName} language with concise, practical lifestyle tips that would be helpful for someone with this blood pressure level.
       Focus on diet, exercise, and daily habits that could help manage or improve their blood pressure.
+      Include culturally appropriate dietary recommendations for ${languageName} speakers.
       
-      Keep your response under 250 words and make it easy to understand for someone without medical background.`;
+      Keep your response under 250 words and make it easy to understand for someone without medical background.
+      
+      Respond ONLY in ${languageName}. Do not include any other language in your response.`;
       
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -129,10 +134,95 @@ const BloodPressureChecker: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       <Card className="w-full max-w-3xl mx-auto">
         <CardHeader className="bg-gradient-to-r from-red-50 to-pink-50">
-          <CardTitle className="text-2xl font-bold text-red-800">Blood Pressure Checker</CardTitle>
-          <CardDescription>
-            Enter your blood pressure readings to assess risk level and get lifestyle tips
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-bold text-red-800">{t('bpChecker.title')}</CardTitle>
+              <CardDescription>
+                {t('bpChecker.subtitle')}
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-red-600" />
+              <Select value={currentLanguage.code} onValueChange={changeLanguage}>
+                <SelectTrigger className="w-48">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      <span>{currentLanguage.flag}</span>
+                      <span>{currentLanguage.nativeName}</span>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">
+                    <div className="flex items-center gap-2">
+                      <span>🇺🇸</span>
+                      <span>English</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="hi">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>हिंदी (Hindi)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="te">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>తెలుగు (Telugu)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="ta">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>தமிழ் (Tamil)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="bn">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>বাংলা (Bengali)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="mr">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>मराठी (Marathi)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="gu">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>ગુજરાતી (Gujarati)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="kn">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>ಕನ್ನಡ (Kannada)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="ml">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>മലയാളം (Malayalam)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pa">
+                    <div className="flex items-center gap-2">
+                      <span>🇮🇳</span>
+                      <span>ਪੰਜਾਬੀ (Punjabi)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="ur">
+                    <div className="flex items-center gap-2">
+                      <span>🇵🇰</span>
+                      <span>اردو (Urdu)</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">

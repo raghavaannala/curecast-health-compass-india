@@ -5,7 +5,7 @@ import { Stethoscope, Loader2, Send, AlertTriangle, Info as InfoIcon, ChevronDow
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useGlobalLanguage } from '@/contexts/GlobalLanguageContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -159,7 +159,7 @@ const DrCureCast: React.FC<DrCureCastProps> = ({
   onVoiceInputProcessed,
   onCameraInputProcessed
 }) => {
-  const { currentLanguage } = useLanguage();
+  const { currentLanguage, t } = useGlobalLanguage();
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage || 'english');
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([

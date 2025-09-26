@@ -19,6 +19,9 @@ import PrescriptionScanner from '@/components/prescription/PrescriptionScanner';
 import OutbreakAlerts from '@/components/outbreak/OutbreakAlerts';
 import OutbreakAlertBanner from '@/components/outbreak/OutbreakAlertBanner';
 import ReminderNotificationManager from '@/components/notifications/ReminderNotificationManager';
+import MultilingualHealthChatbot from './components/MultilingualHealthChatbot';
+import ChatbotAnalyticsDashboard from './components/ChatbotAnalyticsDashboard';
+import HealthCheck from './components/HealthCheck';
 import './App.css';
 import { onAuthStateChanged } from 'firebase/auth';
 import { app, auth } from './firebase';
@@ -584,8 +587,9 @@ const App: React.FC = () => {
   // Main app UI
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 relative">
+      
       {/* App Header */}
-      <header className="sticky top-0 left-0 right-0 z-[100] bg-white/95 backdrop-blur-xl border-b border-gray-200/50 shadow-lg h-[70px]">
+      <header className="sticky top-0 left-0 right-0 z-[90] bg-white/95 backdrop-blur-xl border-b border-gray-200/50 shadow-lg h-[70px]">
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/30 via-blue-50/30 to-indigo-50/30"></div>
         <div className="relative max-w-7xl mx-auto flex items-center justify-between px-8 h-full">
           <div className="flex items-center gap-4">
@@ -770,6 +774,17 @@ const App: React.FC = () => {
           <Route path="/reminders" element={<RemindersSection userId={auth.currentUser?.uid || ''} isAuthenticated={isLoggedIn} />} />
           <Route path="/prescription-scanner" element={<PrescriptionScanner />} />
           <Route path="/outbreak-alerts" element={<OutbreakAlerts />} />
+          <Route path="/multilingual-chatbot" element={
+            <div className="h-screen flex items-center justify-center">
+              <MultilingualHealthChatbot 
+                userId={auth.currentUser?.uid || 'anonymous'} 
+                platform="web"
+                initialLanguage="english"
+              />
+            </div>
+          } />
+          <Route path="/chatbot-analytics" element={<ChatbotAnalyticsDashboard />} />
+          <Route path="/health-check" element={<HealthCheck />} />
         </Routes>
       </main>
 

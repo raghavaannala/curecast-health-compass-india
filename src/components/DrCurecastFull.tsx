@@ -3,6 +3,7 @@ import { drCurecastService } from '../services/drCurecastService';
 import { languageService } from '../services/languageService';
 import { voiceService } from '../services/voiceService';
 import { userProfileService } from '../services/userProfileService';
+import { useGlobalLanguage } from '@/contexts/GlobalLanguageContext';
 import { Language, ChatMessage, DrCurecastUser } from '../types';
 
 interface DrCurecastFullProps {
@@ -10,6 +11,7 @@ interface DrCurecastFullProps {
 }
 
 const DrCurecastFull: React.FC<DrCurecastFullProps> = ({ onUserCreated }) => {
+  const { currentLanguage, t } = useGlobalLanguage();
   const [step, setStep] = useState<'setup' | 'chat'>('setup');
   const [userId, setUserId] = useState<string>('');
   const [currentUser, setCurrentUser] = useState<DrCurecastUser | null>(null);

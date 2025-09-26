@@ -3,6 +3,7 @@ import { Language, CustomVaccinationReminder } from '../types';
 import { VaccinationDashboard } from './VaccinationDashboard';
 import { GovernmentVaccineSync } from './GovernmentVaccineSync';
 import { VaccineEducationPanel } from './VaccineEducationPanel';
+import { PrescriptionScanner } from './PrescriptionScanner';
 import { languageService } from '../services/languageService';
 
 interface VaccinationReminderAppProps {
@@ -20,7 +21,7 @@ export const VaccinationReminderApp: React.FC<VaccinationReminderAppProps> = ({
   language,
   onLanguageChange
 }) => {
-  const [activeView, setActiveView] = useState<'dashboard' | 'sync' | 'education'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'sync' | 'education' | 'prescription'>('dashboard');
   const [currentLanguage, setCurrentLanguage] = useState<Language>(language);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -61,6 +62,8 @@ export const VaccinationReminderApp: React.FC<VaccinationReminderAppProps> = ({
         return 'Government Database Sync';
       case 'education':
         return 'Vaccine Education Center';
+      case 'prescription':
+        return 'Prescription Scanner';
       default:
         return 'Vaccination Reminders';
     }
@@ -74,6 +77,8 @@ export const VaccinationReminderApp: React.FC<VaccinationReminderAppProps> = ({
         return 'Sync with CoWIN, Ayushman Bharat, and state health portals';
       case 'education':
         return 'Learn about vaccines, schedules, and health protection';
+      case 'prescription':
+        return 'Scan prescriptions and find medicines at nearby pharmacies';
       default:
         return 'Custom vaccination reminder system';
     }
@@ -157,6 +162,18 @@ export const VaccinationReminderApp: React.FC<VaccinationReminderAppProps> = ({
                 <span className="mr-2">🎓</span>
                 Education
               </button>
+              
+              <button
+                onClick={() => setActiveView('prescription')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeView === 'prescription'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <span className="mr-2">💊</span>
+                Prescription Scanner
+              </button>
             </nav>
           </div>
         </div>
@@ -189,6 +206,13 @@ export const VaccinationReminderApp: React.FC<VaccinationReminderAppProps> = ({
 
             {activeView === 'education' && (
               <VaccineEducationPanel
+                language={currentLanguage}
+              />
+            )}
+
+            {activeView === 'prescription' && (
+              <PrescriptionScanner
+                userId={userId}
                 language={currentLanguage}
               />
             )}

@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 import { GEMINI_API_KEY } from '@/config/api';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGlobalLanguage } from '@/contexts/GlobalLanguageContext';
 
 // Simple map of conditions to their descriptions for fallback use
 const CONDITION_DESCRIPTIONS = {
@@ -183,6 +185,7 @@ const processMessage = (text: string): {
 
 const CameraDiagnostics: React.FC<CameraDiagnosticsProps> = ({ standalone = true, onImageCaptured }) => {
   const { toast } = useToast();
+  const { currentLanguage, changeLanguage } = useGlobalLanguage();
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   type TabValue = 'camera' | 'upload';
@@ -1327,12 +1330,93 @@ Please try again or contact support if this issue persists.`);
       {standalone && (
         <div className="flex items-center justify-between mb-8">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Camera Diagnostics</h2>
-            <p className="text-lg text-gray-600">Upload or capture images for AI-powered medical analysis</p>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">{currentLanguage.code === 'en' ? 'Camera Diagnostics' : 'कैमरा निदान'}</h2>
+            <p className="text-lg text-gray-600">{currentLanguage.code === 'en' ? 'Upload or capture images for AI-powered medical analysis' : 'AI-संचालित चिकित्सा विश्लेषण के लिए छवियां अपलोड या कैप्चर करें'}</p>
             <div className="flex items-center gap-2 text-sm text-emerald-600">
               <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
               <span>AI-powered analysis ready</span>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-emerald-600" />
+            <Select value={currentLanguage.code} onValueChange={changeLanguage}>
+              <SelectTrigger className="w-48">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <span>{currentLanguage.flag}</span>
+                    <span>{currentLanguage.nativeName}</span>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">
+                  <div className="flex items-center gap-2">
+                    <span>🇺🇸</span>
+                    <span>English</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="hi">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>हिंदी (Hindi)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="te">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>తెలుగు (Telugu)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="ta">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>தமிழ் (Tamil)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="bn">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>বাংলা (Bengali)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="mr">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>मराठी (Marathi)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="gu">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>ગુજરાતી (Gujarati)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="kn">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>ಕನ್ನಡ (Kannada)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="ml">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>മലയാളം (Malayalam)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="pa">
+                  <div className="flex items-center gap-2">
+                    <span>🇮🇳</span>
+                    <span>ਪੰਜਾਬੀ (Punjabi)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="ur">
+                  <div className="flex items-center gap-2">
+                    <span>🇵🇰</span>
+                    <span>اردو (Urdu)</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       )}

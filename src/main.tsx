@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import './i18n'; // Import i18n configuration
 import { LanguageProvider } from './contexts/LanguageContext';
+import { GlobalLanguageProvider } from './contexts/GlobalLanguageContext';
 import { Toaster } from '@/components/ui/toaster';
 import { UserProvider } from '@/contexts/UserContext';
 import { BrowserRouter } from 'react-router-dom';
@@ -26,13 +27,15 @@ if (!rootElement) throw new Error('Root element not found');
 
 createRoot(rootElement).render(
   <React.StrictMode>
-    <UserProvider>
-    <LanguageProvider>
-        <BrowserRouter>
-      <App />
-      <Toaster />
-        </BrowserRouter>
-    </LanguageProvider>
-    </UserProvider>
+    <GlobalLanguageProvider>
+      <UserProvider>
+        <LanguageProvider>
+          <BrowserRouter>
+            <App />
+            <Toaster />
+          </BrowserRouter>
+        </LanguageProvider>
+      </UserProvider>
+    </GlobalLanguageProvider>
   </React.StrictMode>
 );

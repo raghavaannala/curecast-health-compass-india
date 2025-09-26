@@ -23,7 +23,9 @@ import {
   Play,
   Pause,
   Move,
-  Languages
+  Languages,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -37,6 +39,14 @@ interface Message {
   timestamp: Date;
   language: string;
   audioUrl?: string;
+}
+
+interface AssessmentState {
+  isActive: boolean;
+  symptom: string;
+  step: number;
+  responses: string[];
+  questions: string[];
 }
 
 interface Language {
@@ -127,6 +137,16 @@ export const NavigationChatbot: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [buttonPosition, setButtonPosition] = useState({ x: window.innerWidth - 80, y: window.innerHeight - 100 });
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [assessmentState, setAssessmentState] = useState<AssessmentState>({
+    isActive: false,
+    symptom: '',
+    step: 0,
+    responses: [],
+    questions: []
+  });
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [chatSize, setChatSize] = useState({ width: 380, height: 500 });
+  const [isResizing, setIsResizing] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -200,10 +220,202 @@ export const NavigationChatbot: React.FC = () => {
 
   const getWelcomeMessage = () => {
     const welcomeMessages = {
-      en: "Hello! I'm your health navigation assistant. I can help you navigate the app, provide health information, and answer questions in your preferred language. How can I help you today?",
-      hi: "नमस्ते! मैं आपका स्वास्थ्य नेवीगेशन सहायक हूं। मैं आपको ऐप नेविगेट करने, स्वास्थ्य जानकारी प्रदान करने और आपकी पसंदीदा भाषा में प्रश्नों का उत्तर देने में मदद कर सकता हूं। आज मैं आपकी कैसे मदद कर सकता हूं?"
+      en: "Hi, how are you? I'm your friendly doctor assistant. I can help you navigate the app and provide medical guidance. How can I help you today?",
+      hi: "नमस्ते! कैसे हैं आप? मैं आपका मित्रवत डॉक्टर सहायक हूं। मैं आपको ऐप नेविगेट करने और चिकित्सा मार्गदर्शन प्रदान करने में मदद कर सकता हूं। आज मैं आपकी कैसे मदद कर सकता हूं?"
     };
     return welcomeMessages[currentLanguage.code as keyof typeof welcomeMessages] || welcomeMessages.en;
+  };
+
+  // Detect if message mentions symptoms
+  const detectSymptomMention = (text: string): string | null => {
+    const symptomKeywords = [
+      'fever', 'headache', 'cough', 'pain', 'ache', 'hurt', 'sick', 'nausea',
+      'vomiting', 'diarrhea', 'dizzy', 'tired', 'fatigue', 'sore', 'swollen',
+      'rash', 'itchy', 'burning', 'stiff', 'weak', 'breathe', 'chest', 'stomach',
+      'back', 'joint', 'muscle', 'throat', 'temperature', 'hot', 'chills',
+      'cold', 'flu', 'migraine', 'diabetes', 'asthma', 'allergies', 'infection',
+      'wound', 'cut', 'bruise', 'sprain', 'strain', 'anxiety', 'depression',
+      'insomnia', 'constipation', 'heartburn', 'acidity', 'gas', 'bloating',
+      // Hindi keywords
+      'बुखार', 'सिरदर्द', 'खांसी', 'दर्द', 'पेट', 'गले', 'सांस'
+    ];
+    
+    const lowerText = text.toLowerCase();
+    for (const symptom of symptomKeywords) {
+      if (lowerText.includes(symptom)) {
+        return symptom;
+      }
+    }
+    return null;
+  };
+
+  // Disease-specific questions (5-7 questions per symptom)
+  const generateMedicalFollowUpQuestion = (symptom: string, step: number): string => {
+    const questionBank: { [key: string]: string[] } = {
+      fever: [
+        "What is your current body temperature?",
+        "Since how many days have you been experiencing this fever?",
+        "Do you have chills, body aches, or headache along with the fever?",
+        "Have you taken any medicine for the fever?",
+        "Do you have any other symptoms like cough, sore throat, or vomiting?",
+        "Do you have any existing health conditions like diabetes or heart problems?"
+      ],
+      headache: [
+        "How would you rate your headache on a scale of 1-10?",
+        "Since how many days have you been experiencing this headache?",
+        "Where exactly is the headache located - front, back, sides, or all over?",
+        "Do you have nausea, vomiting, or sensitivity to light?",
+        "Have you taken any medicine for the headache?",
+        "What triggers make it worse - stress, certain foods, or lack of sleep?"
+      ],
+      cough: [
+        "Is it a dry cough or are you bringing up phlegm/mucus?",
+        "Since how many days have you been experiencing this cough?",
+        "Do you have fever, sore throat, or difficulty breathing?",
+        "Is the cough worse at night or during the day?",
+        "Have you taken any cough medicine or home remedies?",
+        "Do you have any existing conditions like asthma or allergies?"
+      ],
+      stomach: [
+        "Where exactly do you feel the stomach pain - upper, lower, left, or right side?",
+        "Since how many days have you been experiencing this pain?",
+        "How severe is the pain on a scale of 1-10?",
+        "Is the pain related to eating - before, during, or after meals?",
+        "Do you have nausea, vomiting, or changes in bowel movements?",
+        "Have you eaten anything unusual or taken any medicine recently?"
+      ],
+      cold: [
+        "Do you have a runny or stuffy nose?",
+        "Since how many days have you had these cold symptoms?",
+        "Is your throat sore or scratchy?",
+        "Do you have fever or body aches along with the cold?",
+        "Are you feeling unusually tired or weak?",
+        "Have you taken any medicine or home remedies for the cold?"
+      ],
+      pain: [
+        "Where exactly do you feel the pain?",
+        "How would you rate your pain on a scale of 1-10?",
+        "Since how many days have you been experiencing this pain?",
+        "Do you have swelling, fever, or difficulty moving?",
+        "Have you taken any pain medicine?",
+        "What makes the pain worse or better?"
+      ]
+    };
+    
+    const questions = questionBank[symptom] || questionBank.pain;
+    return questions[step] || "Is there anything else you'd like to tell me about your condition?";
+  };
+
+  // Generate acknowledgment responses
+  const generateMedicalAcknowledgment = (): string => {
+    const acknowledgments = [
+      "I understand, thank you for sharing that.",
+      "Got it, that's helpful information.",
+      "Thanks for letting me know.",
+      "I see, thank you.",
+      "That's very helpful, thank you."
+    ];
+    return acknowledgments[Math.floor(Math.random() * acknowledgments.length)];
+  };
+
+  // Generate AI prescription based on symptoms and responses
+  const generateMedicalAssessment = (symptom: string, responses: string[]): string => {
+    // Analyze responses to determine likely condition and treatment
+    const analysisText = responses.join(' ').toLowerCase();
+    
+    let diagnosis = "";
+    let medications = "";
+    let homeRemedies = "";
+    let warningSigns = "";
+    
+    // Determine probable diagnosis based on symptom and responses
+    if (symptom.includes('fever') || analysisText.includes('fever') || analysisText.includes('temperature')) {
+      diagnosis = "Viral Fever / Flu-like illness";
+      medications = "Paracetamol 500mg every 6-8 hours (if fever >100°F), ORS solution for hydration";
+      homeRemedies = "Drink warm fluids (herbal tea, warm water with honey), take adequate rest, use cool compress on forehead";
+      warningSigns = "Seek medical help if fever persists >3 days, temperature >103°F, difficulty breathing, severe headache, or persistent vomiting";
+    } else if (symptom.includes('headache') || analysisText.includes('headache') || analysisText.includes('head')) {
+      diagnosis = "Tension Headache / Migraine";
+      medications = "Paracetamol 500mg or Ibuprofen 400mg every 6-8 hours, avoid overuse";
+      homeRemedies = "Rest in a dark, quiet room, apply cold/warm compress, stay hydrated, practice relaxation techniques";
+      warningSigns = "Seek immediate help for sudden severe headache, vision changes, neck stiffness, or headache with fever";
+    } else if (symptom.includes('cough') || analysisText.includes('cough')) {
+      if (analysisText.includes('dry')) {
+        diagnosis = "Dry Cough / Upper Respiratory Tract Infection";
+        medications = "Dextromethorphan-based cough syrup, throat lozenges, steam inhalation";
+      } else {
+        diagnosis = "Productive Cough / Chest Congestion";
+        medications = "Expectorant cough syrup, warm salt water gargling";
+      }
+      homeRemedies = "Drink warm fluids, honey with warm water, steam inhalation, avoid cold drinks";
+      warningSigns = "See doctor if cough persists >2 weeks, blood in sputum, high fever, or breathing difficulty";
+    } else if (symptom.includes('stomach') || analysisText.includes('stomach') || analysisText.includes('pain')) {
+      diagnosis = "Gastritis / Indigestion";
+      medications = "Antacid tablets (Eno, Digene), Omeprazole 20mg before meals if severe";
+      homeRemedies = "Eat light, bland foods (rice, toast), avoid spicy/oily foods, drink plenty of water, eat small frequent meals";
+      warningSigns = "Seek help for severe abdominal pain, persistent vomiting, blood in vomit/stool, or signs of dehydration";
+    } else if (symptom.includes('cold') || analysisText.includes('runny nose') || analysisText.includes('sore throat')) {
+      diagnosis = "Common Cold / Upper Respiratory Infection";
+      medications = "Paracetamol for body aches, saline nasal drops, throat lozenges";
+      homeRemedies = "Rest, warm fluids, steam inhalation, honey with warm water, avoid cold foods";
+      warningSigns = "See doctor if symptoms worsen after 7 days, high fever develops, or breathing becomes difficult";
+    } else {
+      diagnosis = "General Health Concern";
+      medications = "Symptomatic treatment as needed (Paracetamol for pain/fever)";
+      homeRemedies = "Rest, adequate hydration, balanced diet, monitor symptoms";
+      warningSigns = "Consult healthcare provider if symptoms persist or worsen";
+    }
+
+    return `<div class="prescription-card bg-gradient-to-br from-blue-50 to-green-50 border-2 border-blue-200 rounded-xl p-6 my-4 shadow-lg">
+      <div class="prescription-header mb-4">
+        <h3 class="text-xl font-bold text-blue-800 flex items-center gap-2">
+          <span class="text-2xl">🩺</span> AI Medical Assessment
+        </h3>
+        <p class="text-sm text-gray-600 mt-1">Based on your symptoms and information provided</p>
+      </div>
+      
+      <div class="prescription-content space-y-4">
+        <div class="diagnosis-section">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">✅</span>
+            <h4 class="font-semibold text-green-700">Possible Condition:</h4>
+          </div>
+          <p class="ml-6 text-gray-800">${diagnosis}</p>
+        </div>
+        
+        <div class="medication-section">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">💊</span>
+            <h4 class="font-semibold text-purple-700">Suggested Medications:</h4>
+          </div>
+          <p class="ml-6 text-gray-800">${medications}</p>
+        </div>
+        
+        <div class="home-care-section">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">🏠</span>
+            <h4 class="font-semibold text-orange-700">Home Care & Lifestyle:</h4>
+          </div>
+          <p class="ml-6 text-gray-800">${homeRemedies}</p>
+        </div>
+        
+        <div class="warning-section">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-lg">⚠️</span>
+            <h4 class="font-semibold text-red-700">Warning Signs - Seek Medical Help:</h4>
+          </div>
+          <p class="ml-6 text-gray-800">${warningSigns}</p>
+        </div>
+      </div>
+      
+      <div class="prescription-footer mt-6 pt-4 border-t border-blue-200">
+        <p class="text-xs text-gray-600 italic">
+          <strong>Disclaimer:</strong> This is an AI-generated assessment for informational purposes only. 
+          Always consult a qualified healthcare professional for proper diagnosis and treatment. 
+          Do not self-medicate without professional guidance.
+        </p>
+      </div>
+    </div>`;
   };
 
   const formatMessage = (text: string): string => {
@@ -497,15 +709,84 @@ export const NavigationChatbot: React.FC = () => {
     setIsTyping(true);
 
     try {
-      // Process the user query with AI
-      const response = await processUserQuery(messageText);
-      addBotMessage(response);
-      setIsTyping(false);
-      
-      // Auto-speak the response (speak by default, unless user has disabled it)
-      setTimeout(() => {
-        speakText(response);
-      }, 100);
+      // Check if we're in an active medical assessment
+      if (assessmentState.isActive) {
+        // Continue medical assessment with acknowledgment
+        const acknowledgment = generateMedicalAcknowledgment();
+        addBotMessage(acknowledgment);
+
+        // Update assessment state with user's response
+        const updatedResponses = [...assessmentState.responses, messageText];
+        const nextStep = assessmentState.step + 1;
+
+        // Check if we have more questions (6 questions per symptom)
+        if (nextStep < 6) {
+          // Ask next question after a delay
+          setTimeout(() => {
+            const nextQuestion = generateMedicalFollowUpQuestion(assessmentState.symptom, nextStep);
+            addBotMessage(nextQuestion);
+            speakText(nextQuestion);
+          }, 1500);
+
+          setAssessmentState(prev => ({
+            ...prev,
+            step: nextStep,
+            responses: updatedResponses
+          }));
+        } else {
+          // Assessment complete - generate final assessment
+          setTimeout(() => {
+            const finalAssessment = generateMedicalAssessment(assessmentState.symptom, updatedResponses);
+            addBotMessage(finalAssessment);
+            speakText(finalAssessment);
+          }, 2000);
+
+          // Reset assessment state
+          setAssessmentState({
+            isActive: false,
+            symptom: '',
+            step: 0,
+            responses: [],
+            questions: []
+          });
+        }
+        setIsTyping(false);
+      } else {
+        // Check if message mentions symptoms first
+        const detectedSymptom = detectSymptomMention(messageText);
+        
+        if (detectedSymptom) {
+          // Start medical assessment - Ask first question directly
+          const firstQuestion = generateMedicalFollowUpQuestion(detectedSymptom, 0);
+          
+          addBotMessage("I understand.");
+          
+          setTimeout(() => {
+            addBotMessage(firstQuestion);
+            speakText(firstQuestion);
+          }, 1000);
+
+          // Set assessment state
+          setAssessmentState({
+            isActive: true,
+            symptom: detectedSymptom,
+            step: 0,
+            responses: [],
+            questions: []
+          });
+          setIsTyping(false);
+        } else {
+          // Process regular navigation/health query with AI
+          const response = await processUserQuery(messageText);
+          addBotMessage(response);
+          setIsTyping(false);
+          
+          // Auto-speak the response
+          setTimeout(() => {
+            speakText(response);
+          }, 100);
+        }
+      }
     } catch (error) {
       console.error('Error processing message:', error);
       addBotMessage("I'm sorry, I'm having trouble processing your request right now. Please try again.");
@@ -566,6 +847,36 @@ export const NavigationChatbot: React.FC = () => {
     }
   };
 
+  // Handle resize functionality for chat
+  const handleChatMouseDown = (e: React.MouseEvent) => {
+    setIsResizing(true);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleChatMouseMove = (e: MouseEvent) => {
+    if (!isResizing || !chatContainerRef.current) return;
+    
+    const rect = chatContainerRef.current.getBoundingClientRect();
+    const newWidth = Math.max(300, Math.min(600, e.clientX - rect.left + 20));
+    const newHeight = Math.max(400, Math.min(700, e.clientY - rect.top + 20));
+    
+    setChatSize({ width: newWidth, height: newHeight });
+  };
+
+  const handleChatMouseUp = () => {
+    setIsResizing(false);
+  };
+
+  const toggleChatExpanded = () => {
+    setIsExpanded(!isExpanded);
+    if (!isExpanded) {
+      setChatSize({ width: 500, height: 600 });
+    } else {
+      setChatSize({ width: 380, height: 500 });
+    }
+  };
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -576,6 +887,17 @@ export const NavigationChatbot: React.FC = () => {
       };
     }
   }, [isDragging, dragStart]);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleChatMouseMove);
+      document.addEventListener('mouseup', handleChatMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleChatMouseMove);
+        document.removeEventListener('mouseup', handleChatMouseUp);
+      };
+    }
+  }, [isResizing]);
 
   return (
     <>
@@ -656,7 +978,15 @@ export const NavigationChatbot: React.FC = () => {
         {isOpen && (
           <motion.div
             ref={chatContainerRef}
-            className="fixed bottom-20 right-4 z-40 w-80 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
+            className="fixed bottom-20 right-4 z-40 bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden"
+            style={{ 
+              width: chatSize.width, 
+              height: chatSize.height,
+              minWidth: '300px',
+              minHeight: '400px',
+              maxWidth: '600px',
+              maxHeight: '700px'
+            }}
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -670,10 +1000,10 @@ export const NavigationChatbot: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold flex items-center gap-2">
-                    Health Navigator
+                    Doctor Assistant
                     <Move className="h-4 w-4 opacity-60" />
                   </h3>
-                  <p className="text-xs opacity-90">Multilingual AI Assistant • {currentLanguage.nativeName}</p>
+                  <p className="text-xs opacity-90">Friendly Medical AI • {currentLanguage.nativeName}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -719,6 +1049,15 @@ export const NavigationChatbot: React.FC = () => {
                   )}
                 </div>
                 
+                {/* Resize Controls */}
+                <button
+                  onClick={toggleChatExpanded}
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  title={isExpanded ? 'Minimize' : 'Expand'}
+                >
+                  {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+
                 {/* Audio Controls */}
                 <button
                   onClick={isSpeaking ? stopSpeaking : () => setIsSpeaking(!isSpeaking)}
@@ -784,6 +1123,33 @@ export const NavigationChatbot: React.FC = () => {
                   </div>
                 </motion.div>
               )}
+              
+              {/* Medical Assessment Progress Indicator */}
+              {assessmentState.isActive && (
+                <motion.div
+                  className="flex justify-center"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="bg-gradient-to-r from-blue-50 to-emerald-50 border border-blue-200 rounded-full px-4 py-2 flex items-center gap-2 shadow-sm">
+                    <Heart className="h-4 w-4 text-blue-500 animate-pulse" />
+                    <span className="text-sm text-blue-700 font-medium">
+                      Medical Assessment - Step {assessmentState.step + 1}/6
+                    </span>
+                    <div className="flex gap-1">
+                      {[...Array(6)].map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-2 h-2 rounded-full ${
+                            i <= assessmentState.step ? 'bg-blue-500' : 'bg-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -843,6 +1209,16 @@ export const NavigationChatbot: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Resize Handle */}
+            <div
+              className="absolute bottom-0 right-0 w-4 h-4 bg-gray-300 hover:bg-gray-400 cursor-se-resize opacity-50 hover:opacity-100 transition-opacity"
+              onMouseDown={handleChatMouseDown}
+              title="Drag to resize"
+              style={{
+                background: 'linear-gradient(-45deg, transparent 30%, #9ca3af 30%, #9ca3af 70%, transparent 70%)',
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
